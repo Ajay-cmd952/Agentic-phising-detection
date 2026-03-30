@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 class URLAnalysisAgent:
     def __init__(self):
-        self.model_path = r"C:\Users\AJAY KARTHICK\OneDrive\Desktop\Agentic_Phising_project\Models\rf_model.pkl"
+        self.model_path = "Models/rf_model.pkl"
         self.model = None
         
         if os.path.exists(self.model_path):
