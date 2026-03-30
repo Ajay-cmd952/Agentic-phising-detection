@@ -6,4 +6,5 @@ opencv-python-headless
 scikit-learn
 joblib
 transformers
-torch
+torch 
+beautifulsoup4
