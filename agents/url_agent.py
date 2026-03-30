@@ -83,3 +83,11 @@ class URLAnalysisAgent:
         probability = self.model.predict_proba(features_df)[0][1]
         
         return float(probability)
+
+
+
+
+
+
+
+        
