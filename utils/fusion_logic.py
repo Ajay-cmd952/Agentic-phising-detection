@@ -3,17 +3,17 @@ class RiskFusionModule:
         # We give the URL model 70% weight and Content 30%
         final_risk_score = (url_score * 0.7) + (content_score * 0.3)
         
-        # TUNED THRESHOLDS: Reduced sensitivity to prevent False Positives
+        # TUNED THRESHOLDS: Increased sensitivity to catch SMS Phishing
         
-        # 1. If URL is EXTREMELY bad (> 0.80), flag it immediately
+        # 1. If URL is highly suspicious (> 0.80), flag it immediately
         if url_score > 0.80:
             prediction = "Phishing"
             
-        # 2. Otherwise, require a higher combined score (> 0.60) to flag as phishing
-        elif final_risk_score > 0.60:
+        # 2. LOWERED THRESHOLD: Require a combined score of only > 0.40 to flag as phishing
+        elif final_risk_score >= 0.40:
             prediction = "Phishing"
             
-        # 3. If it doesn't meet those high thresholds, it is Safe
+        # 3. If it doesn't meet those thresholds, it is Safe
         else:
             prediction = "Safe"
             
