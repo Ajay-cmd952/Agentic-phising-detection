@@ -14,6 +14,17 @@ class AIOrchestrator:
     def run_detection(self, url):
         print(f"\n🔍 Orchestrator starting analysis for: {url}")
         
+        # --- NEW: FINANCIAL INTERCEPTION RULE ---
+        # Bypass the AI models for UPI links to prevent False Positives
+        if url.lower().startswith("upi://"):
+            print("-> 💸 Financial Payment Link Detected! Bypassing ML.")
+            return {
+                "url_risk": 0.0,
+                "content_risk": 0.0,
+                "final_score": 0.0,
+                "prediction": "Financial Warning"
+            }
+        
         # 1. Preprocessing
         print("-> Running Preprocessing Agent...")
         cleaned_content = self.preprocessor.clean_url_content(url)
