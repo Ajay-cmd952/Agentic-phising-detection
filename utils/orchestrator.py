@@ -14,9 +14,11 @@ class AIOrchestrator:
     def run_detection(self, url):
         print(f"\n🔍 Orchestrator starting analysis for: {url}")
         
-        # --- NEW: FINANCIAL INTERCEPTION RULE ---
-        # Bypass the AI models for UPI links to prevent False Positives
-        if url.lower().startswith("upi://"):
+        # --- EDGE CASE INTERCEPTION RULES ---
+        url_lower = url.lower()
+        
+        # 1. Financial Interception (UPI)
+        if url_lower.startswith("upi://") or url_lower.startswith("pay"):
             print("-> 💸 Financial Payment Link Detected! Bypassing ML.")
             return {
                 "url_risk": 0.0,
@@ -24,6 +26,18 @@ class AIOrchestrator:
                 "final_score": 0.0,
                 "prediction": "Financial Warning"
             }
+            
+        # 2. Local System Commands (Wi-Fi, Phone, Email)
+        if url_lower.startswith(("wifi:", "tel:", "smsto:", "mailto:", "matmsg:")):
+            print("-> 📱 Local System Command Detected! Bypassing ML.")
+            return {
+                "url_risk": 0.0,
+                "content_risk": 0.0,
+                "final_score": 0.0,
+                "prediction": "System Command"
+            }
+        
+        # --- STANDARD ML PIPELINE ---
         
         # 1. Preprocessing
         print("-> Running Preprocessing Agent...")
