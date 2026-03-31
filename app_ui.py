@@ -232,11 +232,13 @@ if app_mode == "🔍 Threat Scanner":
                 
                 st.subheader("🚨 Threat Intelligence Report")
                 
-                # UPDATED LOGIC: Handles the new Financial Warning status
+                # UPDATED LOGIC: Handles the new System Command status
                 if status == "Phishing":
                     st.error(f"**CRITICAL ALERT: Payload classified as {status.upper()}** 🛑")
                 elif status == "Financial Warning":
                     st.warning("**FINANCIAL INTERCEPTION: This is a direct payment link (UPI). Proceed with extreme caution!** 💸")
+                elif status == "System Command":
+                    st.info("**SYSTEM ACTION: This code connects to a Wi-Fi network or triggers a device action. Verify the network name before connecting!** 📡")
                 else:
                     st.success(f"**CLEAN: Payload classified as {status.upper()}** ✅")
                     
