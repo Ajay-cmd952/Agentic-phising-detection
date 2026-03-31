@@ -182,7 +182,8 @@ if app_mode == "🔍 Threat Scanner":
                 if not user_input.strip():
                     st.error("⚠️ Please input data to scan.")
                 else:
-                    extracted_urls = re.findall(r'(https?://[^\s]+)', user_input)
+                    # UPDATED REGEX: Now catches both http/https and upi:// links
+                    extracted_urls = re.findall(r'((?:https?|upi)://[^\s]+)', user_input)
                     if not extracted_urls:
                         st.success("✅ No clickable URLs detected in the payload.")
                     else:
@@ -230,8 +231,12 @@ if app_mode == "🔍 Threat Scanner":
                 log_to_db(target_url, status, final_score)
                 
                 st.subheader("🚨 Threat Intelligence Report")
+                
+                # UPDATED LOGIC: Handles the new Financial Warning status
                 if status == "Phishing":
                     st.error(f"**CRITICAL ALERT: Payload classified as {status.upper()}** 🛑")
+                elif status == "Financial Warning":
+                    st.warning("**FINANCIAL INTERCEPTION: This is a direct payment link (UPI). Proceed with extreme caution!** 💸")
                 else:
                     st.success(f"**CLEAN: Payload classified as {status.upper()}** ✅")
                     
