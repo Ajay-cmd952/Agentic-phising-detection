@@ -6,6 +6,7 @@ from datetime import datetime
 import cv2
 import numpy as np
 from PIL import Image
+from pyzbar.pyzbar import decode
 from utils.orchestrator import AIOrchestrator
 
 # --- 1. Database Initialization ---
@@ -148,11 +149,11 @@ with st.sidebar:
     st.subheader("Live System Status")
     st.success("🟢 URL Agent (RF): Online")
     st.success("🟢 Content Agent (BERT): Online")
-    st.success("🟢 Vision Agent (QR): Online")
+    st.success("🟢 Vision Agent (pyzbar): Online")
     st.success("🟢 SQLite Database: Connected")
     
     st.markdown("---")
-    st.caption("System Version: 4.8 (Crimson SOC Theme)")
+    st.caption("System Version: 4.9 (Crimson SOC Theme)")
     st.caption("Current User: Administrator")
 
 # --- 5. MAIN PAGE CONTENT ---
@@ -200,17 +201,17 @@ if app_mode == "🔍 Threat Scanner":
                 if st.button("🔍 Decode & Scan QR", type="primary", use_container_width=True):
                     with st.spinner("Vision Agent is decoding image..."):
                         try:
+                            # Use pyzbar for aggressive decoding
                             img_array = np.array(image.convert('RGB'))
-                            img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
-                            detector = cv2.QRCodeDetector()
-                            data, bbox, _ = detector.detectAndDecode(img_bgr)
-                            if data:
-                                target_url = data
+                            decoded_objects = decode(img_array)
+                            
+                            if decoded_objects:
+                                target_url = decoded_objects[0].data.decode('utf-8')
                                 st.success("✅ Vision Agent successfully extracted URL from image.")
                             else:
                                 st.error("❌ Could not detect a valid QR code in this image.")
                         except Exception as e:
-                            st.error("⚠️ Image Processing Error: Make sure the file is a clear QR code.")
+                            st.error(f"⚠️ Image Processing Error: {e}")
 
     # --- Centralized AI Analysis Logic ---
     if target_url:

@@ -10,3 +10,5 @@ torch
 beautifulsoup4
 requests
 torchvision
+pyzbar==0.1.9
+opencv-python-headless==4.10.0.84
