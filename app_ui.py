@@ -152,7 +152,7 @@ with st.sidebar:
     st.success("🟢 SQLite Database: Connected")
     
     st.markdown("---")
-    st.caption("System Version: 4.7 (Crimson SOC Theme)")
+    st.caption("System Version: 4.8 (Crimson SOC Theme)")
     st.caption("Current User: Administrator")
 
 # --- 5. MAIN PAGE CONTENT ---
@@ -228,19 +228,29 @@ if app_mode == "🔍 Threat Scanner":
                 url_risk = result.get('url_risk', 0.5)
                 content_risk = result.get('content_risk', 0.5)
                 
+                # Fetch the unrolled URL if it exists (for shorteners)
+                real_url = result.get('real_url', 'Unknown Destination')
+                
                 log_to_db(target_url, status, final_score)
                 
                 st.subheader("🚨 Threat Intelligence Report")
                 
-                # UPDATED LOGIC: Handles the new System Command status
+                # --- UPDATED ALERT LOGIC ---
                 if status == "Phishing":
                     st.error(f"**CRITICAL ALERT: Payload classified as {status.upper()}** 🛑")
                 elif status == "Financial Warning":
                     st.warning("**FINANCIAL INTERCEPTION: This is a direct payment link (UPI). Proceed with extreme caution!** 💸")
                 elif status == "System Command":
                     st.info("**SYSTEM ACTION: This code connects to a Wi-Fi network or triggers a device action. Verify the network name before connecting!** 📡")
+                elif status == "Shortener Warning":
+                    st.warning(f"**OBFUSCATION DETECTED: This is a masked URL shortener.** 🕵️\n\n**Hidden Destination Revealed:** `{real_url}`")
                 else:
                     st.success(f"**CLEAN: Payload classified as {status.upper()}** ✅")
+                
+                # --- UNIVERSAL ZERO-TRUST AWARENESS MESSAGE ---
+                st.markdown("---")
+                st.info("🛡️ **Security Awareness Reminder:** AI is a powerful assistant, but it is not perfect. Please use your best judgment. \n\n* **Never** enter passwords, OTPs, or financial details unless you are 100% sure of the sender's identity. \n* **Always** double-check the URL in your browser's address bar before logging in.")
+                st.markdown("---")
                     
                 res_tab1, res_tab2 = st.tabs(["📊 Metric Overview", "🧠 AI Decision Log"])
                 
