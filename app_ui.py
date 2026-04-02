@@ -238,13 +238,13 @@ if app_mode == "🔍 Threat Scanner":
                     st.error(f"**CRITICAL ALERT: Payload classified as {status.upper()}** 🛑")
                 
                 elif status == "Financial Warning":
-                    # Parse the UPI link to find the shop's name!
+                    # Parse the UPI link to find the payee details
                     parsed = urllib.parse.urlparse(target_url)
                     params = urllib.parse.parse_qs(parsed.query)
                     payee_name = params.get('pn', ['Unknown Payee'])[0]
                     payee_vpa = params.get('pa', ['Unknown ID'])[0]
                     
-                    st.warning(f"**FINANCIAL INTERCEPTION:** Direct payment link detected. 💸\n\n**Requested Payee:** `{payee_name}`\n**UPI ID:** `{payee_vpa}`\n\n*Please verify the shop name above matches where you are standing before proceeding.*")
+                    st.warning(f"**FINANCIAL INTERCEPTION:** Direct payment link detected. 💸\n\n**Requested Payee:** `{payee_name}`\n**UPI ID:** `{payee_vpa}`\n\n*Security Protocol: Verify the Payee Name and UPI ID. Note that corporate payment gateways may display generic merchant tags. Always confirm the final recipient identity within your secure banking application before authorizing any transaction.*")
                 
                 elif status == "System Command":
                     st.info("**SYSTEM ACTION: This code connects to a Wi-Fi network or triggers a device action. Verify the network name before connecting!** 📡")
