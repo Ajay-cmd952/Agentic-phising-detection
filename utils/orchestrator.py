@@ -17,45 +17,36 @@ class AIOrchestrator:
         
         url_lower = url.lower()
         
-        # --- NEW: SECURE TRUSTED DOMAIN ALLOWLIST ---
-        # 1. Safely extract the exact hostname (domain) to prevent spoofing bypasses
+        # --- SECURE TRUSTED DOMAIN ALLOWLIST (CATEGORIZED) ---
         parsed_url = urllib.parse.urlparse(url_lower if url_lower.startswith('http') else 'http://' + url_lower)
         hostname = parsed_url.hostname or ""
 
-        # 2. The Enterprise Allowlist
-        trusted_domains = [
-            # Tech & Infrastructure
-            "google.com", "microsoft.com", "github.com", "linkedin.com", "canva.com", 
-            "apple.com", "amazon.com", "aws.amazon.com", "zoom.us", "cisco.com",
-            # Indian Financial Institutions
-            "hdfcbank.com", "icicibank.com", "sbi.co.in", "axisbank.com", "pnbindia.in", 
-            "kotak.com", "billdesk.com", "razorpay.com", "paytm.com",
-            # Healthcare & Government
-            "gov.in", "nic.in", "who.int", "cowin.gov.in", "mohfw.gov.in",
-            # Education
-            "vit.ac.in" 
-        ]
+        trusted_categories = {
+            "Verified Tech Infrastructure": ["google.com", "microsoft.com", "github.com", "linkedin.com", "canva.com", "apple.com", "amazon.com", "aws.amazon.com", "zoom.us", "cisco.com"],
+            "Official Financial Institution": ["hdfcbank.com", "icicibank.com", "sbi.co.in", "axisbank.com", "pnbindia.in", "kotak.com", "billdesk.com", "razorpay.com", "paytm.com"],
+            "Government & Healthcare Portal": ["gov.in", "nic.in", "who.int", "cowin.gov.in", "mohfw.gov.in"],
+            "Recognized Educational Institution": ["vit.ac.in"] 
+        }
 
-        # 3. Secure Matching Logic: Must BE the domain or be an official SUBDOMAIN
-        is_trusted = any(hostname == domain or hostname.endswith("." + domain) for domain in trusted_domains)
+        for category, domains in trusted_categories.items():
+            if any(hostname == domain or hostname.endswith("." + domain) for domain in domains):
+                print(f"-> 🛡️ {category} Detected ({hostname}). Bypassing ML.")
+                return {
+                    "url_risk": 0.0,
+                    "content_risk": 0.0,
+                    "final_score": 0.0,
+                    "prediction": "Trusted Domain",
+                    "trusted_category": category,
+                    "real_url": url,
+                    "reason": f"Domain perfectly matches the internal enterprise allowlist for '{category}'. Machine learning math is bypassed to ensure seamless operation for official platforms."
+                }
 
-        if is_trusted:
-            print(f"-> 🛡️ Trusted Enterprise Domain Detected ({hostname}). Bypassing ML.")
-            return {
-                "url_risk": 0.0,
-                "content_risk": 0.0,
-                "final_score": 0.0,
-                "prediction": "Safe"
-            }
-
-        # --- UNROLL URL SHORTENERS (Option B + C) ---
+        # --- UNROLL URL SHORTENERS ---
         shorteners = ["bit.ly", "tinyurl.com", "t.co", "qrs.ly", "is.gd", "ow.ly", "cutt.ly"]
         if any(shortener in url_lower for shortener in shorteners):
             print("-> 🔗 URL Shortener detected! Attempting to unroll...")
             try:
-                # Add http:// if missing so the request doesn't crash
                 req_url = url if url.startswith("http") else "http://" + url
-                # Silently visit the link to find the final destination
                 response = requests.head(req_url, allow_redirects=True, timeout=5)
                 real_url = response.url
                 print(f"-> 📍 Unrolled destination: {real_url}")
@@ -67,29 +58,30 @@ class AIOrchestrator:
                 "content_risk": 0.0,
                 "final_score": 0.0,
                 "prediction": "Shortener Warning",
-                "real_url": real_url  # Send the hidden URL to the frontend!
+                "real_url": real_url,
+                "reason": "The link relies on a redirection service to obscure its final destination. Hackers frequently use this to bypass basic security filters."
             }
         
         # --- EDGE CASE INTERCEPTION RULES ---
         
-        # 1. Financial Interception (UPI)
         if url_lower.startswith("upi://") or url_lower.startswith("pay"):
             print("-> 💸 Financial Payment Link Detected! Bypassing ML.")
             return {
                 "url_risk": 0.0,
                 "content_risk": 0.0,
                 "final_score": 0.0,
-                "prediction": "Financial Warning"
+                "prediction": "Financial Warning",
+                "reason": "This is a direct peer-to-peer or merchant financial protocol, not a standard website. ML scoring is Not Applicable (N/A)."
             }
             
-        # 2. Local System Commands (Wi-Fi, Phone, Email)
         if url_lower.startswith(("wifi:", "tel:", "smsto:", "mailto:", "matmsg:")):
             print("-> 📱 Local System Command Detected! Bypassing ML.")
             return {
                 "url_risk": 0.0,
                 "content_risk": 0.0,
                 "final_score": 0.0,
-                "prediction": "System Command"
+                "prediction": "System Command",
+                "reason": "This code executes a local hardware or software action (like dialing a phone or connecting to Wi-Fi) rather than navigating to a web page."
             }
         
         # --- STANDARD ML PIPELINE ---
@@ -104,5 +96,18 @@ class AIOrchestrator:
         
         print("-> Running Risk Fusion & Decision Layer...")
         final_result = self.fusion.aggregate_and_decide(url_risk_score, content_risk_score)
+        
+        # --- EXPLAINABLE AI (XAI) REASONING ENGINE ---
+        if final_result.get('prediction') == "Phishing":
+            if url_risk_score >= 0.6 and content_risk_score >= 0.6:
+                reason = "Both the URL structure is highly suspicious (e.g., unusual characters, extreme length) and the semantic payload contains strong psychological triggers (urgency, threats)."
+            elif url_risk_score >= 0.6:
+                reason = "The text appears benign, but the URL structure is mathematically irregular, strongly suggesting a disguised malicious link."
+            else:
+                reason = "The URL looks relatively normal, but the semantic content contains severe social engineering triggers attempting to manipulate the user."
+        else:
+            reason = "The structural layout of the URL and the semantic meaning of the text conform to standard, safe internet patterns with no detected anomalies."
+            
+        final_result['reason'] = reason
         
         return final_result

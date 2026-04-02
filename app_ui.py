@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from pyzbar.pyzbar import decode
-import urllib.parse  # NEW: Used to parse UPI links!
+import urllib.parse
 from utils.orchestrator import AIOrchestrator
 
 # --- 1. Database Initialization ---
@@ -48,82 +48,15 @@ st.set_page_config(
 # --- 🚨 THE "CRIMSON THREAT" MULTI-COLOR THEME 🚨 ---
 st.markdown("""
     <style>
-        /* 1. The Deep Animated RED Background */
-        .stApp {
-            background: linear-gradient(135deg, #1f0000, #3d0000, #140000, #2b0000);
-            background-size: 300% 300%;
-            animation: cyberGradient 15s ease infinite;
-        }
-
-        @keyframes cyberGradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* 2. Floating Content Container (Distinct Dark Slate Color) */
-        .block-container {
-            background: rgba(22, 24, 28, 0.95) !important; /* Dark Slate/Charcoal to separate from background */
-            backdrop-filter: blur(15px) !important;
-            border: 1px solid rgba(255, 70, 70, 0.3) !important; /* Red border */
-            border-radius: 15px !important;
-            box-shadow: 0 0 40px rgba(255, 50, 50, 0.15) !important; /* Red glow */
-            padding-top: 2.5rem !important;
-            padding-bottom: 2.5rem !important;
-            padding-left: 3rem !important;
-            padding-right: 3rem !important;
-            margin-top: 2rem !important;
-            margin-bottom: 2rem !important;
-            max-width: 95% !important;
-        }
-
-        /* 3. Sidebar (Distinct Deep Black-Red) */
-        [data-testid="stSidebar"] {
-            background-color: #0a0101 !important;
-            border-right: 2px solid rgba(255, 70, 70, 0.4);
-            box-shadow: 5px 0 20px rgba(255, 50, 50, 0.15);
-        }
-
-        /* 4. Neon Red Glowing Buttons */
-        div.stButton > button:first-child {
-            background: linear-gradient(90deg, rgba(255,70,70,0.1) 0%, rgba(255,100,100,0.1) 100%);
-            color: #FF4444;
-            border: 1px solid #FF4444;
-            border-radius: 6px;
-            padding: 10px 24px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            transition: all 0.3s ease-in-out;
-            box-shadow: 0 0 10px rgba(255, 70, 70, 0.2);
-        }
-        div.stButton > button:first-child:hover {
-            background: linear-gradient(90deg, #FF3333 0%, #FF6666 100%);
-            color: #ffffff !important;
-            box-shadow: 0 0 20px rgba(255, 70, 70, 0.6);
-            transform: translateY(-2px);
-            border: 1px solid transparent;
-        }
-
-        /* 5. Terminal-style Text Area (True Black) */
-        .stTextArea textarea {
-            background-color: #000000 !important;
-            color: #FF8888 !important;
-            border: 1px solid rgba(255, 70, 70, 0.4) !important;
-            font-family: 'Courier New', Courier, monospace !important;
-            border-radius: 6px;
-        }
-        .stTextArea textarea:focus {
-            border-color: #FF3333 !important;
-            box-shadow: 0 0 15px rgba(255, 70, 70, 0.5) !important;
-        }
-
-        /* 6. Glowing Metrics (Red) */
-        [data-testid="stMetricValue"] {
-            color: #FF4444 !important;
-            text-shadow: 0 0 10px rgba(255, 70, 70, 0.4);
-        }
-        
-        /* Hide Default Header completely */
+        .stApp { background: linear-gradient(135deg, #1f0000, #3d0000, #140000, #2b0000); background-size: 300% 300%; animation: cyberGradient 15s ease infinite; }
+        @keyframes cyberGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .block-container { background: rgba(22, 24, 28, 0.95) !important; backdrop-filter: blur(15px) !important; border: 1px solid rgba(255, 70, 70, 0.3) !important; border-radius: 15px !important; box-shadow: 0 0 40px rgba(255, 50, 50, 0.15) !important; padding: 2.5rem 3rem !important; margin: 2rem auto !important; max-width: 95% !important; }
+        [data-testid="stSidebar"] { background-color: #0a0101 !important; border-right: 2px solid rgba(255, 70, 70, 0.4); box-shadow: 5px 0 20px rgba(255, 50, 50, 0.15); }
+        div.stButton > button:first-child { background: linear-gradient(90deg, rgba(255,70,70,0.1) 0%, rgba(255,100,100,0.1) 100%); color: #FF4444; border: 1px solid #FF4444; border-radius: 6px; padding: 10px 24px; font-weight: bold; letter-spacing: 1px; transition: all 0.3s ease-in-out; box-shadow: 0 0 10px rgba(255, 70, 70, 0.2); }
+        div.stButton > button:first-child:hover { background: linear-gradient(90deg, #FF3333 0%, #FF6666 100%); color: #ffffff !important; box-shadow: 0 0 20px rgba(255, 70, 70, 0.6); transform: translateY(-2px); border: 1px solid transparent; }
+        .stTextArea textarea { background-color: #000000 !important; color: #FF8888 !important; border: 1px solid rgba(255, 70, 70, 0.4) !important; font-family: 'Courier New', Courier, monospace !important; border-radius: 6px; }
+        .stTextArea textarea:focus { border-color: #FF3333 !important; box-shadow: 0 0 15px rgba(255, 70, 70, 0.5) !important; }
+        [data-testid="stMetricValue"] { color: #FF4444 !important; text-shadow: 0 0 10px rgba(255, 70, 70, 0.4); }
         header {visibility: hidden !important;}
     </style>
 """, unsafe_allow_html=True)
@@ -140,21 +73,15 @@ with st.sidebar:
     st.title("🛡️ Admin Console")
     st.markdown("**Agentic Threat Pipeline**")
     st.markdown("---")
-    
-    app_mode = st.radio(
-        "Navigation Menu", 
-        ["🔍 Threat Scanner", "📊 Global Analytics", "⚙️ Agent Settings"]
-    )
-    
+    app_mode = st.radio("Navigation Menu", ["🔍 Threat Scanner", "📊 Global Analytics", "⚙️ Agent Settings"])
     st.markdown("---")
     st.subheader("Live System Status")
     st.success("🟢 URL Agent (RF): Online")
     st.success("🟢 Content Agent (BERT): Online")
     st.success("🟢 Vision Agent (pyzbar): Online")
     st.success("🟢 SQLite Database: Connected")
-    
     st.markdown("---")
-    st.caption("System Version: 5.0 (Crimson SOC Theme)")
+    st.caption("System Version: 6.0 (XAI Enabled)")
     st.caption("Current User: Administrator")
 
 # --- 5. MAIN PAGE CONTENT ---
@@ -164,7 +91,6 @@ if app_mode == "🔍 Threat Scanner":
     st.markdown("Choose your input method below to scan for phishing threats.")
     
     col_input, col_info = st.columns([2, 1])
-    
     target_url = None
 
     with col_info:
@@ -175,11 +101,7 @@ if app_mode == "🔍 Threat Scanner":
         input_tab1, input_tab2 = st.tabs(["📝 Text / URL Input", "📷 QR Code Scanner (Quishing)"])
         
         with input_tab1:
-            user_input = st.text_area(
-                "Target Data Input:", 
-                height=150, 
-                placeholder="Paste raw text, SMS messages, emails, or direct URLs here..."
-            )
+            user_input = st.text_area("Target Data Input:", height=150, placeholder="Paste raw text, SMS messages, emails, or direct URLs here...")
             if st.button("🚀 Initialize Multi-Agent Scan", type="primary", use_container_width=True):
                 if not user_input.strip():
                     st.error("⚠️ Please input data to scan.")
@@ -203,7 +125,6 @@ if app_mode == "🔍 Threat Scanner":
                         try:
                             img_array = np.array(image.convert('RGB'))
                             decoded_objects = decode(img_array)
-                            
                             if decoded_objects:
                                 target_url = decoded_objects[0].data.decode('utf-8')
                                 st.success("✅ Vision Agent successfully extracted URL from image.")
@@ -228,22 +149,25 @@ if app_mode == "🔍 Threat Scanner":
                 url_risk = result.get('url_risk', 0.5)
                 content_risk = result.get('content_risk', 0.5)
                 real_url = result.get('real_url', 'Unknown Destination')
+                xai_reason = result.get('reason', 'AI analysis complete.')
                 
                 log_to_db(target_url, status, final_score)
                 
                 st.subheader("🚨 Threat Intelligence Report")
                 
-                # --- UPDATED ALERT LOGIC WITH UPI PARSER ---
+                # --- UPDATED ALERT LOGIC ---
                 if status == "Phishing":
                     st.error(f"**CRITICAL ALERT: Payload classified as {status.upper()}** 🛑")
                 
+                elif status == "Trusted Domain":
+                    category = result.get('trusted_category', 'Verified Platform')
+                    st.success(f"**CLEAN: {category.upper()}** ✅\n\n*System Notice: This domain has been securely verified against the internal enterprise allowlist.*")
+                
                 elif status == "Financial Warning":
-                    # Parse the UPI link to find the payee details
                     parsed = urllib.parse.urlparse(target_url)
                     params = urllib.parse.parse_qs(parsed.query)
                     payee_name = params.get('pn', ['Unknown Payee'])[0]
                     payee_vpa = params.get('pa', ['Unknown ID'])[0]
-                    
                     st.warning(f"**FINANCIAL INTERCEPTION:** Direct payment link detected. 💸\n\n**Requested Payee:** `{payee_name}`\n**UPI ID:** `{payee_vpa}`\n\n*Security Protocol: Verify the Payee Name and UPI ID. Note that corporate payment gateways may display generic merchant tags. Always confirm the final recipient identity within your secure banking application before authorizing any transaction.*")
                 
                 elif status == "System Command":
@@ -254,6 +178,14 @@ if app_mode == "🔍 Threat Scanner":
                 
                 else:
                     st.success(f"**CLEAN: Payload classified as {status.upper()}** ✅")
+                
+                # --- NEW: XAI REASONING BLOCK ---
+                st.markdown("""
+                <div style="background-color: rgba(30, 40, 50, 0.6); padding: 15px; border-radius: 8px; border-left: 5px solid #00aaff; margin-top: 15px;">
+                    <h4 style="margin-top: 0px; color: #00aaff;">🤖 Explainable AI (XAI) Verdict</h4>
+                    <p style="font-size: 16px; margin-bottom: 0px;">{}</p>
+                </div>
+                """.format(xai_reason), unsafe_allow_html=True)
                 
                 # --- NEW STRONGER ZERO-TRUST MESSAGE ---
                 st.markdown("---")
@@ -269,9 +201,8 @@ if app_mode == "🔍 Threat Scanner":
                     m2.metric("Structural Risk (URL)", f"{url_risk:.2f}")
                     m3.metric("Semantic Risk (Content)", f"{content_risk:.2f}")
                     
-                    # Explain why scores are 0.00 for bypassed protocols
-                    if status in ["Financial Warning", "System Command"]:
-                        st.caption("*(Note: Machine Learning scoring is intentionally bypassed for direct payment and system protocols to prevent false calculations.)*")
+                    if status in ["Financial Warning", "System Command", "Trusted Domain"]:
+                        st.caption("*(Note: Machine Learning scoring is intentionally bypassed for trusted domains and direct system/payment protocols to prevent false calculations.)*")
                 
                 with res_tab2:
                     st.write("### Pipeline Execution Trace")
@@ -280,10 +211,12 @@ if app_mode == "🔍 Threat Scanner":
                     st.write("3. **URL Agent:** Ran feature extraction through Random Forest classifier.")
                     st.write("4. **Content Agent:** Assessed semantic payload.")
                     st.write("5. **Fusion Module:** Calculated weighted average.")
-                    st.write("6. **Database Module:** Scan successfully logged to `scans.db` 💾")
+                    st.write("6. **Explainable AI Module:** Generated human-readable logic rationale.")
+                    st.write("7. **Database Module:** Scan successfully logged to `scans.db` 💾")
                     
             except Exception as e:
                 st.error("❌ **Backend Engine Error**")
                 st.warning("The AI backend encountered an issue parsing this specific link.")
                 st.code(str(e))
-# ... (Analytics and Settings sections remain exactly the same) ...
+
+# ... [Global Analytics and Agent Settings blocks remain the same below this line] ...
