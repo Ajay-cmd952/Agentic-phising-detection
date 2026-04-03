@@ -50,7 +50,6 @@ st.markdown("""
         .stTextArea textarea { background-color: #000000 !important; color: #FF8888 !important; border: 1px solid rgba(255, 70, 70, 0.4) !important; font-family: 'Courier New', Courier, monospace !important; border-radius: 6px; }
         .stTextArea textarea:focus { border-color: #FF3333 !important; box-shadow: 0 0 15px rgba(255, 70, 70, 0.5) !important; }
         [data-testid="stMetricValue"] { color: #FF4444 !important; text-shadow: 0 0 10px rgba(255, 70, 70, 0.4); }
-        header {visibility: hidden !important;}
     </style>
 """, unsafe_allow_html=True)
 
