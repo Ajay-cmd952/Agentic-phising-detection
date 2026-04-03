@@ -15,6 +15,11 @@ class AIOrchestrator:
     def run_detection(self, url, deep_scan=True, url_threshold=0.80, fusion_threshold=0.60):
         print(f"\n🔍 Orchestrator starting analysis for: {url}")
         
+        # --- THE FIX: SANITIZE BARE URLS ---
+        # If the link doesn't have a protocol, the ML math will crash trying to split it.
+        if not url.lower().startswith(('http://', 'https://', 'upi://', 'tel:', 'wifi:', 'smsto:', 'mailto:', 'matmsg:')):
+            url = "http://" + url
+            
         url_lower = url.lower()
         was_shortened = False
         
@@ -23,12 +28,11 @@ class AIOrchestrator:
         if any(shortener in url_lower for shortener in shorteners):
             print("-> 🔗 URL Shortener detected! Attempting to unroll...")
             try:
-                req_url = url if url.startswith("http") else "http://" + url
                 # Use requests.get to force the redirect to execute completely
-                response = requests.get(req_url, allow_redirects=True, timeout=5)
+                response = requests.get(url, allow_redirects=True, timeout=5)
                 unrolled_url = response.url
                 
-                if unrolled_url != req_url:
+                if unrolled_url != url:
                     print(f"-> 📍 Unrolled destination: {unrolled_url}")
                     url = unrolled_url  # Update the URL so the ML scans the REAL destination!
                     url_lower = url.lower()
@@ -54,7 +58,7 @@ class AIOrchestrator:
                 
                 reason_text = f"Domain securely authenticated against the Zero-Trust network directory as a '{category}'. Heuristic deep-scanning deferred for verified infrastructure."
                 if was_shortened:
-                    reason_text = f"Shortener unrolled to: {url}. " + reason_text
+                    reason_text = f"Shortener unrolled to: [{url}]. " + reason_text
                     
                 return {
                     "url_risk": 0.0, "content_risk": 0.0, "final_score": 0.0,
