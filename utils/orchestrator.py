@@ -12,14 +12,31 @@ class AIOrchestrator:
         self.content_agent = ContentAnalysisAgent()
         self.fusion = RiskFusionModule()
 
-    # --- NEW: Added dynamic parameters for the Settings Page ---
     def run_detection(self, url, deep_scan=True, url_threshold=0.80, fusion_threshold=0.60):
         print(f"\n🔍 Orchestrator starting analysis for: {url}")
-        print(f"⚙️ Settings - Deep Scan: {deep_scan}, URL Thresh: {url_threshold}, Fusion Thresh: {fusion_threshold}")
         
         url_lower = url.lower()
+        was_shortened = False
         
-        # --- SECURE TRUSTED DOMAIN ALLOWLIST ---
+        # --- 1. UNROLL URL SHORTENERS FIRST ---
+        shorteners = ["bit.ly", "tinyurl.com", "t.co", "qrs.ly", "is.gd", "ow.ly", "cutt.ly"]
+        if any(shortener in url_lower for shortener in shorteners):
+            print("-> 🔗 URL Shortener detected! Attempting to unroll...")
+            try:
+                req_url = url if url.startswith("http") else "http://" + url
+                # Use requests.get to force the redirect to execute completely
+                response = requests.get(req_url, allow_redirects=True, timeout=5)
+                unrolled_url = response.url
+                
+                if unrolled_url != req_url:
+                    print(f"-> 📍 Unrolled destination: {unrolled_url}")
+                    url = unrolled_url  # Update the URL so the ML scans the REAL destination!
+                    url_lower = url.lower()
+                    was_shortened = True
+            except Exception:
+                print("-> ⚠️ Could not resolve hidden destination. Scanning original link.")
+
+        # --- 2. SECURE TRUSTED DOMAIN ALLOWLIST ---
         parsed_url = urllib.parse.urlparse(url_lower if url_lower.startswith('http') else 'http://' + url_lower)
         hostname = parsed_url.hostname or ""
 
@@ -34,53 +51,39 @@ class AIOrchestrator:
         for category, domains in trusted_categories.items():
             if any(hostname == domain or hostname.endswith("." + domain) for domain in domains):
                 print(f"-> 🛡️ {category} Detected ({hostname}). Bypassing ML.")
+                
+                reason_text = f"Domain securely authenticated against the Zero-Trust network directory as a '{category}'. Heuristic deep-scanning deferred for verified infrastructure."
+                if was_shortened:
+                    reason_text = f"Shortener unrolled to: {url}. " + reason_text
+                    
                 return {
                     "url_risk": 0.0, "content_risk": 0.0, "final_score": 0.0,
                     "prediction": "Trusted Domain", "trusted_category": category, "real_url": url,
-                    "reason": f"Domain securely authenticated against the Zero-Trust network directory as a '{category}'. Heuristic deep-scanning deferred for verified infrastructure."
+                    "reason": reason_text
                 }
-
-        # --- UNROLL URL SHORTENERS ---
-        shorteners = ["bit.ly", "tinyurl.com", "t.co", "qrs.ly", "is.gd", "ow.ly", "cutt.ly"]
-        if any(shortener in url_lower for shortener in shorteners):
-            print("-> 🔗 URL Shortener detected! Attempting to unroll...")
-            try:
-                req_url = url if url.startswith("http") else "http://" + url
-                response = requests.head(req_url, allow_redirects=True, timeout=5)
-                real_url = response.url
-                print(f"-> 📍 Unrolled destination: {real_url}")
-            except Exception:
-                real_url = "Could not resolve hidden destination."
-
-            return {
-                "url_risk": 0.0, "content_risk": 0.0, "final_score": 0.0,
-                "prediction": "Shortener Warning", "real_url": real_url,
-                "reason": "URL obfuscation detected. The payload relies on a redirection service to mask its final destination, a common tactic used to bypass perimeter security."
-            }
         
-        # --- EDGE CASE INTERCEPTION RULES ---
+        # --- 3. EDGE CASE INTERCEPTION RULES ---
         if url_lower.startswith("upi://") or url_lower.startswith("pay"):
             return {
                 "url_risk": 0.0, "content_risk": 0.0, "final_score": 0.0,
-                "prediction": "Financial Warning",
+                "prediction": "Financial Warning", "real_url": url,
                 "reason": "This is a direct peer-to-peer or merchant financial protocol, not a standard website. ML scoring is Not Applicable (N/A)."
             }
             
         if url_lower.startswith(("wifi:", "tel:", "smsto:", "mailto:", "matmsg:")):
             return {
                 "url_risk": 0.0, "content_risk": 0.0, "final_score": 0.0,
-                "prediction": "System Command",
+                "prediction": "System Command", "real_url": url,
                 "reason": "This code executes a local hardware or software action (like dialing a phone or connecting to Wi-Fi) rather than navigating to a web page."
             }
         
-        # --- STANDARD ML PIPELINE ---
+        # --- 4. STANDARD ML PIPELINE ---
         print("-> Running Preprocessing Agent...")
         cleaned_content = self.preprocessor.clean_url_content(url)
         
         print("-> Running URL Analysis Agent...")
         url_risk_score = self.url_agent.analyze(url)
         
-        # --- NEW: DYNAMIC DEEP SCAN TOGGLE ---
         content_risk_score = 0.0
         if deep_scan:
             print("-> Running Content Analysis Agent (BERT)...")
@@ -91,7 +94,6 @@ class AIOrchestrator:
         print("-> Running Risk Fusion & Decision Layer...")
         final_result = self.fusion.aggregate_and_decide(url_risk_score, content_risk_score)
         
-        # --- NEW: DYNAMIC THRESHOLD OVERRIDE ---
         final_score = final_result['final_score']
         if final_score >= fusion_threshold:
             final_result['prediction'] = "Phishing"
@@ -112,6 +114,10 @@ class AIOrchestrator:
             else:
                 reason = "Static and dynamic analysis complete. Structural and semantic patterns conform to standard, safe network traffic baseline."
             
+        if was_shortened:
+            reason = f"URL obfuscation detected. Shortener successfully unrolled to revealing destination [{url}]. " + reason
+            
         final_result['reason'] = reason
+        final_result['real_url'] = url
         
         return final_result
