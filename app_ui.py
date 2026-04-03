@@ -37,13 +37,17 @@ def log_to_db(url, status, score):
 
 init_db()
 
-# --- 2. Page Configuration ---
+# --- 2. Page Configuration & Session State ---
 st.set_page_config(
     page_title="Agentic Phishing Detector",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Initialize Admin Login State
+if 'is_admin' not in st.session_state:
+    st.session_state.is_admin = False
 
 # --- 🚨 THE "CRIMSON THREAT" MULTI-COLOR THEME 🚨 ---
 st.markdown("""
@@ -68,21 +72,45 @@ def load_ai():
 
 orchestrator = load_ai()
 
-# --- 4. THE SIDEBAR ---
+# --- 4. THE SIDEBAR (NOW WITH SECURITY) ---
 with st.sidebar:
-    st.title("🛡️ Admin Console")
+    st.title("🛡️ Security Node")
     st.markdown("**Agentic Threat Pipeline**")
     st.markdown("---")
-    app_mode = st.radio("Navigation Menu", ["🔍 Threat Scanner", "📊 Global Analytics", "⚙️ Agent Settings"])
+    
+    # Security Logic: Only hide Settings if not Admin. Analytics is public!
+    if st.session_state.is_admin:
+        app_mode = st.radio("Navigation Menu", ["🔍 Threat Scanner", "📊 Global Analytics", "⚙️ Agent Settings"])
+    else:
+        app_mode = st.radio("Navigation Menu", ["🔍 Threat Scanner", "📊 Global Analytics"])
+
     st.markdown("---")
     st.subheader("Live System Status")
     st.success("🟢 URL Agent (RF): Online")
     st.success("🟢 Content Agent (BERT): Online")
     st.success("🟢 Vision Agent (pyzbar): Online")
     st.success("🟢 SQLite Database: Connected")
+    
     st.markdown("---")
-    st.caption("System Version: 6.0 (XAI Enabled)")
-    st.caption("Current User: Administrator")
+    
+    # The Secure Login Portal
+    if not st.session_state.is_admin:
+        st.markdown("🔒 **Admin Access**")
+        admin_password = st.text_input("Enter Password to unlock settings:", type="password")
+        if st.button("Unlock Modules", use_container_width=True):
+            if admin_password == "admin123":  # <-- CHANGE YOUR PASSWORD HERE
+                st.session_state.is_admin = True
+                st.rerun()
+            else:
+                st.error("❌ Access Denied")
+        st.caption("Current User: Public Guest")
+    else:
+        if st.button("🔓 Logout Admin", use_container_width=True):
+            st.session_state.is_admin = False
+            st.rerun()
+        st.caption("Current User: Administrator")
+        
+    st.caption("System Version: 6.5 (Zero-Trust Enabled)")
 
 # --- 5. MAIN PAGE CONTENT ---
 
@@ -155,31 +183,24 @@ if app_mode == "🔍 Threat Scanner":
                 
                 st.subheader("🚨 Threat Intelligence Report")
                 
-                # --- UPDATED ALERT LOGIC ---
                 if status == "Phishing":
                     st.error(f"**CRITICAL ALERT: Payload classified as {status.upper()}** 🛑")
-                
                 elif status == "Trusted Domain":
                     category = result.get('trusted_category', 'Verified Platform')
                     st.success(f"**CLEAN: {category.upper()}** ✅\n\n*System Notice: This domain has been securely verified against the internal enterprise allowlist.*")
-                
                 elif status == "Financial Warning":
                     parsed = urllib.parse.urlparse(target_url)
                     params = urllib.parse.parse_qs(parsed.query)
                     payee_name = params.get('pn', ['Unknown Payee'])[0]
                     payee_vpa = params.get('pa', ['Unknown ID'])[0]
                     st.warning(f"**FINANCIAL INTERCEPTION:** Direct payment link detected. 💸\n\n**Requested Payee:** `{payee_name}`\n**UPI ID:** `{payee_vpa}`\n\n*Security Protocol: Verify the Payee Name and UPI ID. Note that corporate payment gateways may display generic merchant tags. Always confirm the final recipient identity within your secure banking application before authorizing any transaction.*")
-                
                 elif status == "System Command":
                     st.info("**SYSTEM ACTION: This code connects to a Wi-Fi network or triggers a device action. Verify the network name before connecting!** 📡")
-                
                 elif status == "Shortener Warning":
                     st.warning(f"**OBFUSCATION DETECTED: This is a masked URL shortener.** 🕵️\n\n**Hidden Destination Revealed:** `{real_url}`")
-                
                 else:
                     st.success(f"**CLEAN: Payload classified as {status.upper()}** ✅")
                 
-                # --- XAI REASONING BLOCK ---
                 st.markdown("""
                 <div style="background-color: rgba(30, 40, 50, 0.6); padding: 15px; border-radius: 8px; border-left: 5px solid #00aaff; margin-top: 15px;">
                     <h4 style="margin-top: 0px; color: #00aaff;">🤖 Explainable AI (XAI) Verdict</h4>
@@ -187,7 +208,6 @@ if app_mode == "🔍 Threat Scanner":
                 </div>
                 """.format(xai_reason), unsafe_allow_html=True)
                 
-                # --- STRONGER ZERO-TRUST MESSAGE ---
                 st.markdown("---")
                 st.info("🛡️ **System Notice:** The scores below are generated by an Artificial Intelligence model based on pattern recognition. AI is a powerful assistant, but it is not infallible. \n\n**Please ensure your own safety:** Verify the sender's identity and double-check URLs manually before proceeding.")
                 st.markdown("---")
@@ -219,7 +239,7 @@ if app_mode == "🔍 Threat Scanner":
                 st.warning("The AI backend encountered an issue parsing this specific link.")
                 st.code(str(e))
 
-# --- RESTORED GLOBAL ANALYTICS PAGE ---
+# --- PUBLIC GLOBAL ANALYTICS PAGE ---
 elif app_mode == "📊 Global Analytics":
     st.title("📊 Global Analytics Dashboard")
     st.markdown("Real-time statistics pulled directly from the `scans.db` SQLite database.")
@@ -256,13 +276,16 @@ elif app_mode == "📊 Global Analytics":
         st.subheader("Raw Database Logs")
         st.dataframe(df.sort_values(by="id", ascending=False), use_container_width=True)
 
-# --- RESTORED AGENT SETTINGS PAGE ---
+# --- LOCKED AGENT SETTINGS PAGE ---
 elif app_mode == "⚙️ Agent Settings":
-    st.title("⚙️ AI Engine Tuning")
-    st.success("✅ Administrator access verified. You may now modify the heuristic thresholds.")
-    
-    url_threshold = st.slider("URL Risk Threshold", 0.0, 1.0, 0.80)
-    fusion_threshold = st.slider("Fusion Risk Threshold", 0.0, 1.0, 0.60)
-    deep_scan = st.checkbox("Enable Deep Content Scanning (Slower)", value=True)
-    
-    st.info("Note: Wiring these dynamic sliders directly to the `orchestrator.py` threshold variables is scheduled for the next deployment phase.")
+    if not st.session_state.is_admin:
+        st.error("Authentication required to view this module.")
+    else:
+        st.title("⚙️ AI Engine Tuning")
+        st.success("✅ Administrator access verified. You may now modify the heuristic thresholds.")
+        
+        url_threshold = st.slider("URL Risk Threshold", 0.0, 1.0, 0.80)
+        fusion_threshold = st.slider("Fusion Risk Threshold", 0.0, 1.0, 0.60)
+        deep_scan = st.checkbox("Enable Deep Content Scanning (Slower)", value=True)
+        
+        st.info("Note: Wiring these dynamic sliders directly to the `orchestrator.py` threshold variables is scheduled for the next deployment phase.")
