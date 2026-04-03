@@ -12,11 +12,34 @@ class AIOrchestrator:
         self.content_agent = ContentAnalysisAgent()
         self.fusion = RiskFusionModule()
 
+    def check_google_safe_browsing(self, url):
+        # Note for Deployment: Replace "YOUR_API_KEY_HERE" with a real key from Google Cloud Console
+        api_key = "YOUR_API_KEY_HERE"
+        if api_key == "YOUR_API_KEY_HERE":
+            return False
+            
+        endpoint = f"https://safebrowsing.googleapis.com/v4/threatMatches:find?key={api_key}"
+        payload = {
+            "client": {"clientId": "vit-agentic-phishing-detector", "clientVersion": "1.0"},
+            "threatInfo": {
+                "threatTypes": ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE"],
+                "platformTypes": ["ANY_PLATFORM"],
+                "threatEntryTypes": ["URL"],
+                "threatEntries": [{"url": url}]
+            }
+        }
+        try:
+            response = requests.post(endpoint, json=payload, timeout=3)
+            if response.status_code == 200 and "matches" in response.json():
+                return True
+        except Exception:
+            pass
+        return False
+
     def run_detection(self, url, deep_scan=True, url_threshold=0.80, fusion_threshold=0.60):
         print(f"\n🔍 Orchestrator starting analysis for: {url}")
         
         # --- THE FIX: SANITIZE BARE URLS ---
-        # If the link doesn't have a protocol, the ML math will crash trying to split it.
         if not url.lower().startswith(('http://', 'https://', 'upi://', 'tel:', 'wifi:', 'smsto:', 'mailto:', 'matmsg:')):
             url = "http://" + url
             
@@ -28,13 +51,12 @@ class AIOrchestrator:
         if any(shortener in url_lower for shortener in shorteners):
             print("-> 🔗 URL Shortener detected! Attempting to unroll...")
             try:
-                # Use requests.get to force the redirect to execute completely
                 response = requests.get(url, allow_redirects=True, timeout=5)
                 unrolled_url = response.url
                 
                 if unrolled_url != url:
                     print(f"-> 📍 Unrolled destination: {unrolled_url}")
-                    url = unrolled_url  # Update the URL so the ML scans the REAL destination!
+                    url = unrolled_url
                     url_lower = url.lower()
                     was_shortened = True
             except Exception:
@@ -80,8 +102,18 @@ class AIOrchestrator:
                 "prediction": "System Command", "real_url": url,
                 "reason": "This code executes a local hardware or software action (like dialing a phone or connecting to Wi-Fi) rather than navigating to a web page."
             }
+            
+        # --- 4. LIVE THREAT INTEL (GOOGLE SAFE BROWSING) ---
+        print("-> 🌐 Checking Google Safe Browsing API...")
+        if self.check_google_safe_browsing(url_lower):
+            print("-> 🛑 CRITICAL: Google Safe Browsing flagged this URL!")
+            return {
+                "url_risk": 1.0, "content_risk": 1.0, "final_score": 1.0,
+                "prediction": "Phishing", "real_url": url,
+                "reason": "CRITICAL MATCH: This URL is currently blacklisted on the global Google Safe Browsing database for active malware or social engineering. Immediate block applied."
+            }
         
-        # --- 4. STANDARD ML PIPELINE ---
+        # --- 5. STANDARD ML PIPELINE ---
         print("-> Running Preprocessing Agent...")
         cleaned_content = self.preprocessor.clean_url_content(url)
         
