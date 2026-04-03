@@ -50,9 +50,14 @@ class AIOrchestrator:
         url_lower = url.lower()
         was_shortened = False
         
-        # --- 1. UNROLL URL SHORTENERS FIRST ---
-        shorteners = ["bit.ly", "tinyurl.com", "t.co", "qrs.ly", "is.gd", "ow.ly", "cutt.ly"]
-        if any(shortener in url_lower for shortener in shorteners):
+        # --- 1. UNROLL URL SHORTENERS FIRST (FIXED BUG) ---
+        parsed_temp = urllib.parse.urlparse(url_lower if url_lower.startswith('http') else 'http://' + url_lower)
+        temp_host = parsed_temp.hostname or ""
+        
+        shortener_domains = ["bit.ly", "tinyurl.com", "t.co", "qrs.ly", "is.gd", "ow.ly", "cutt.ly"]
+        
+        # Now it only checks the actual domain name, avoiding the "wcomhost.com" bug!
+        if any(temp_host == s or temp_host.endswith("." + s) for s in shortener_domains):
             print("-> 🔗 URL Shortener detected! Attempting to unroll...")
             try:
                 response = requests.get(url, allow_redirects=True, timeout=5)
