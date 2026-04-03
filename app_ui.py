@@ -96,7 +96,7 @@ with st.sidebar:
         
     st.caption("System Version: 7.0 (Ghost Portal Enabled)")
 
-# --- CONDITIONAL CSS STYLING (MOVED HERE TO FIX THE DELAY BUG) ---
+# --- CONDITIONAL CSS STYLING ---
 if st.session_state.theme == "Crimson Threat (Dark)":
     st.markdown("""
         <style>
@@ -130,16 +130,24 @@ if app_mode == "🔍 Threat Scanner":
         with input_tab1:
             user_input = st.text_area("Target Data Input:", height=150, placeholder="Paste raw text, SMS messages, emails, or direct URLs here...")
             if st.button("🚀 Initialize Multi-Agent Scan", type="primary", use_container_width=True):
-                if not user_input.strip():
+                raw_input = user_input.strip()
+                if not raw_input:
                     st.error("⚠️ Please input data to scan.")
                 else:
-                    extraction_pattern = r'((?:https?://|upi://|tel:|wifi:|smsto:|mailto:|matmsg:|www\.|bit\.ly|tinyurl\.com|t\.co|qrs\.ly|is\.gd|ow\.ly|cutt\.ly)[^\s]+)'
-                    extracted_urls = re.findall(extraction_pattern, user_input, re.IGNORECASE)
+                    # --- THE ULTIMATE DRAGNET REGEX ---
+                    # 1. Catches standard protocols (http, https, upi, tel, wifi, mailto, etc.)
+                    # 2. Catches any bare string that looks like a domain (e.g., hiphopcanada.com, login.secure.net)
+                    extraction_pattern = r'((?:https?://|upi://|tel:|wifi:|smsto:|mailto:|matmsg:)[^\s]+|(?:(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})(?:/[^\s]*)?)'
+                    extracted_urls = re.findall(extraction_pattern, raw_input, re.IGNORECASE)
                     
-                    if not extracted_urls:
-                        st.success("✅ No clickable URLs or system commands detected in the payload.")
-                    else:
+                    if extracted_urls:
+                        # Grab the first match we find
                         target_url = extracted_urls[0]
+                    # Smart Fallback just in case the regex misses a highly obfuscated single string
+                    elif " " not in raw_input and ("." in raw_input or ":" in raw_input):
+                        target_url = raw_input
+                    else:
+                        st.success("✅ No clickable URLs or system commands detected in the payload.")
 
         with input_tab2:
             st.info("Upload a screenshot of a suspicious QR code. The Vision Agent will extract the hidden link.")
