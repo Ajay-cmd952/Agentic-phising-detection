@@ -41,22 +41,6 @@ if 'deep_scan' not in st.session_state:
 if 'theme' not in st.session_state:
     st.session_state.theme = "Crimson Threat (Dark)"
 
-# --- CONDITIONAL CSS STYLING ---
-if st.session_state.theme == "Crimson Threat (Dark)":
-    st.markdown("""
-        <style>
-            .stApp { background: linear-gradient(135deg, #1f0000, #3d0000, #140000, #2b0000); background-size: 300% 300%; animation: cyberGradient 15s ease infinite; }
-            @keyframes cyberGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-            .block-container { background: rgba(22, 24, 28, 0.95) !important; backdrop-filter: blur(15px) !important; border: 1px solid rgba(255, 70, 70, 0.3) !important; border-radius: 15px !important; box-shadow: 0 0 40px rgba(255, 50, 50, 0.15) !important; padding: 2.5rem 3rem !important; margin: 2rem auto !important; max-width: 95% !important; }
-            [data-testid="stSidebar"] { background-color: #0a0101 !important; border-right: 2px solid rgba(255, 70, 70, 0.4); box-shadow: 5px 0 20px rgba(255, 50, 50, 0.15); }
-            div.stButton > button:first-child { background: linear-gradient(90deg, rgba(255,70,70,0.1) 0%, rgba(255,100,100,0.1) 100%); color: #FF4444; border: 1px solid #FF4444; border-radius: 6px; padding: 10px 24px; font-weight: bold; letter-spacing: 1px; transition: all 0.3s ease-in-out; box-shadow: 0 0 10px rgba(255, 70, 70, 0.2); }
-            div.stButton > button:first-child:hover { background: linear-gradient(90deg, #FF3333 0%, #FF6666 100%); color: #ffffff !important; box-shadow: 0 0 20px rgba(255, 70, 70, 0.6); transform: translateY(-2px); border: 1px solid transparent; }
-            .stTextArea textarea { background-color: #000000 !important; color: #FF8888 !important; border: 1px solid rgba(255, 70, 70, 0.4) !important; font-family: 'Courier New', Courier, monospace !important; border-radius: 6px; }
-            .stTextArea textarea:focus { border-color: #FF3333 !important; box-shadow: 0 0 15px rgba(255, 70, 70, 0.5) !important; }
-            [data-testid="stMetricValue"] { color: #FF4444 !important; text-shadow: 0 0 10px rgba(255, 70, 70, 0.4); }
-        </style>
-    """, unsafe_allow_html=True)
-
 @st.cache_resource
 def load_ai():
     return AIOrchestrator()
@@ -111,6 +95,23 @@ with st.sidebar:
         st.caption("Current User: Administrator")
         
     st.caption("System Version: 7.0 (Ghost Portal Enabled)")
+
+# --- CONDITIONAL CSS STYLING (MOVED HERE TO FIX THE DELAY BUG) ---
+if st.session_state.theme == "Crimson Threat (Dark)":
+    st.markdown("""
+        <style>
+            .stApp { background: linear-gradient(135deg, #1f0000, #3d0000, #140000, #2b0000); background-size: 300% 300%; animation: cyberGradient 15s ease infinite; }
+            @keyframes cyberGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+            .block-container { background: rgba(22, 24, 28, 0.95) !important; backdrop-filter: blur(15px) !important; border: 1px solid rgba(255, 70, 70, 0.3) !important; border-radius: 15px !important; box-shadow: 0 0 40px rgba(255, 50, 50, 0.15) !important; padding: 2.5rem 3rem !important; margin: 2rem auto !important; max-width: 95% !important; }
+            [data-testid="stSidebar"] { background-color: #0a0101 !important; border-right: 2px solid rgba(255, 70, 70, 0.4); box-shadow: 5px 0 20px rgba(255, 50, 50, 0.15); }
+            div.stButton > button:first-child { background: linear-gradient(90deg, rgba(255,70,70,0.1) 0%, rgba(255,100,100,0.1) 100%); color: #FF4444; border: 1px solid #FF4444; border-radius: 6px; padding: 10px 24px; font-weight: bold; letter-spacing: 1px; transition: all 0.3s ease-in-out; box-shadow: 0 0 10px rgba(255, 70, 70, 0.2); }
+            div.stButton > button:first-child:hover { background: linear-gradient(90deg, #FF3333 0%, #FF6666 100%); color: #ffffff !important; box-shadow: 0 0 20px rgba(255, 70, 70, 0.6); transform: translateY(-2px); border: 1px solid transparent; }
+            .stTextArea textarea { background-color: #000000 !important; color: #FF8888 !important; border: 1px solid rgba(255, 70, 70, 0.4) !important; font-family: 'Courier New', Courier, monospace !important; border-radius: 6px; }
+            .stTextArea textarea:focus { border-color: #FF3333 !important; box-shadow: 0 0 15px rgba(255, 70, 70, 0.5) !important; }
+            [data-testid="stMetricValue"] { color: #FF4444 !important; text-shadow: 0 0 10px rgba(255, 70, 70, 0.4); }
+        </style>
+    """, unsafe_allow_html=True)
+
 
 # --- MAIN APP LOGIC ---
 

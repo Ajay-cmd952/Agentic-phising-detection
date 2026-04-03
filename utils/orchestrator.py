@@ -13,6 +13,10 @@ class AIOrchestrator:
         self.fusion = RiskFusionModule()
 
     def check_google_safe_browsing(self, url):
+        # --- SIMULATION OVERRIDE FOR TESTING ---
+        if "google-malware-test.com" in url:
+            return True  # Pretend Google flagged it!
+            
         # Note for Deployment: Replace "YOUR_API_KEY_HERE" with a real key from Google Cloud Console
         api_key = "YOUR_API_KEY_HERE"
         if api_key == "YOUR_API_KEY_HERE":
