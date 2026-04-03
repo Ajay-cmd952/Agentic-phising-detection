@@ -123,9 +123,13 @@ if app_mode == "🔍 Threat Scanner":
                 if not user_input.strip():
                     st.error("⚠️ Please input data to scan.")
                 else:
-                    extracted_urls = re.findall(r'((?:https?|upi)://[^\s]+)', user_input)
+                    # --- NEW: MASTER REGEX Bouncer ---
+                    # This catches http, https, upi, tel, wifi, mailto, smsto, www, and all common shorteners!
+                    extraction_pattern = r'((?:https?://|upi://|tel:|wifi:|smsto:|mailto:|matmsg:|www\.|bit\.ly|tinyurl\.com|t\.co|qrs\.ly|is\.gd|ow\.ly|cutt\.ly)[^\s]+)'
+                    extracted_urls = re.findall(extraction_pattern, user_input, re.IGNORECASE)
+                    
                     if not extracted_urls:
-                        st.success("✅ No clickable URLs detected in the payload.")
+                        st.success("✅ No clickable URLs or system commands detected in the payload.")
                     else:
                         target_url = extracted_urls[0]
 
@@ -155,7 +159,6 @@ if app_mode == "🔍 Threat Scanner":
         with st.spinner("🤖 Multi-Agent Pipeline is analyzing the threat..."):
             time.sleep(1.0) 
             try:
-                # --- NEW: PASSING SETTINGS TO THE ORCHESTRATOR ---
                 result = orchestrator.run_detection(
                     target_url, 
                     deep_scan=st.session_state.deep_scan,
@@ -265,7 +268,6 @@ elif app_mode == "⚙️ Agent Settings":
         st.title("⚙️ AI Engine Tuning")
         st.success("✅ Administrator access verified. You are live-editing the AI pipeline.")
         
-        # --- NEW: DYNAMIC SLIDERS TIED TO SESSION STATE ---
         st.session_state.url_threshold = st.slider("URL Risk Threshold (Sensitivity)", 0.0, 1.0, st.session_state.url_threshold)
         st.session_state.fusion_threshold = st.slider("Fusion Risk Threshold (Final Verdict)", 0.0, 1.0, st.session_state.fusion_threshold)
         st.session_state.deep_scan = st.checkbox("Enable Deep Content Scanning (BERT NLP Engine)", value=st.session_state.deep_scan)
