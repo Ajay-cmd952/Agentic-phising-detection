@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
 from utils.orchestrator import AIOrchestrator
 
@@ -8,6 +9,11 @@ app = FastAPI(
     description="Backend API for real-time Chrome Extension integration.",
     version="1.0"
 )
+
+# --- SILENCE THE FAVICON ERROR ---
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return Response(content=b"", media_type="image/x-icon")
 
 # 2. Load your existing AI brain!
 print("Loading AI Orchestrator into API memory...")
