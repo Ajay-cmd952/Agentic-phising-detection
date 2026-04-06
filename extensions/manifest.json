@@ -10,8 +10,7 @@
     "activeTab",
     "contextMenus",
     "tabs",
-    "scripting",
-    "webNavigation"
+    "scripting"
   ],
   "host_permissions": [
     "http://127.0.0.1:8080/*",
@@ -19,5 +18,11 @@
   ],
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
 }
