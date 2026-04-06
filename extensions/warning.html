@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Suspected Phishing Site</title>
+  <style>
+    body { background-color: #dc2626; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+    .container { max-width: 600px; padding: 40px; background: rgba(0,0,0,0.2); border-radius: 12px; }
+    h1 { font-size: 42px; margin-bottom: 10px; }
+    p { font-size: 18px; line-height: 1.5; margin-bottom: 30px; }
+    .url-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 6px; font-family: monospace; word-break: break-all; margin-bottom: 30px; font-size: 14px; }
+    .btn-group { display: flex; gap: 20px; justify-content: center; }
+    button { padding: 12px 24px; font-size: 16px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+    .btn-safe { background-color: white; color: #dc2626; }
+    .btn-safe:hover { background-color: #f8f9fa; }
+    .btn-danger { background-color: transparent; color: white; border: 2px solid white; }
+    .btn-danger:hover { background-color: rgba(255,255,255,0.1); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛑 Deceptive Site Ahead</h1>
+    <p>Agentic Shield has blocked this navigation. Attackers on the site you are trying to visit may trick you into installing malware or revealing personal information (like passwords or credit cards).</p>
+    <div class="url-box" id="bad-url">Loading...</div>
+    <div class="btn-group">
+      <button class="btn-safe" id="go-back">Back to Safety</button>
+      <button class="btn-danger" id="proceed">Proceed Anyway (Unsafe)</button>
+    </div>
+  </div>
+  <script src="warning.js"></script>
+</body>
+</html>
