@@ -5,6 +5,11 @@ document.addEventListener('click', function(event) {
     // Ignore non-links or javascript triggers
     if (!target || !target.href || target.href.startsWith('javascript:') || target.href.startsWith('mailto:')) return;
 
+    // 🛡️ SAFETY CHECK: If the extension was reloaded but the page wasn't refreshed, let the click happen normally to prevent crashes.
+    if (!chrome.runtime || !chrome.runtime.sendMessage) {
+        return; 
+    }
+
     // 🛑 FREEZE THE BROWSER!
     event.preventDefault();
 
@@ -17,8 +22,17 @@ document.addEventListener('click', function(event) {
 
     // Send the URL to the AI
     chrome.runtime.sendMessage({ action: "checkUrl", url: target.href }, function(response) {
+        
+        // Safety catch if the API connection drops
+        if (chrome.runtime.lastError || !response) {
+            toast.remove();
+            window.location.href = target.href;
+            return;
+        }
+
         if (response.status === "Phishing") {
-            // It's bad! Redirect to the Red Screen of Death
+            // It's bad! Clean up popup and Redirect to the Red Screen of Death
+            toast.remove(); 
             window.location.href = chrome.runtime.getURL(`warning.html?url=${encodeURIComponent(target.href)}`);
         } else {
             // It's safe! Update the popup to Green for 1 second so the professors can see it
@@ -26,8 +40,8 @@ document.addEventListener('click', function(event) {
             toast.style.background = "#10b981";
             
             setTimeout(() => {
-                // Now actually open the link
-                window.location.href = target.href;
+                toast.remove(); // 🧹 THIS FIXES THE STICKY POPUP ON THE BACK BUTTON!
+                window.location.href = target.href; // Now actually open the link
             }, 1000); // 1 second delay
         }
     });
