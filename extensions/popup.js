@@ -1,75 +1,62 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const scanBtn = document.getElementById('scan-btn');
     const resultDiv = document.getElementById('result');
     const urlDisplay = document.getElementById('current-url');
-    const loader = document.getElementById('loading');
-    let currentTabUrl = '';
+    const loadingView = document.getElementById('loading-view');
+    const loadingText = document.querySelector('.loading-text');
 
-    // Get the URL of the active tab
+    // 1. Instantly grab the URL when popup opens
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        currentTabUrl = tabs[0].url;
-        // Truncate the URL for display if it's too long
-        let displayUrl = currentTabUrl.length > 50 ? currentTabUrl.substring(0, 50) + '...' : currentTabUrl;
-        urlDisplay.innerText = "Target: " + displayUrl;
-    });
+        let currentTabUrl = tabs[0].url;
+        urlDisplay.innerText = currentTabUrl.length > 45 ? currentTabUrl.substring(0, 45) + '...' : currentTabUrl;
+        
+        // 2. Change loading text dynamically to look highly technical
+        setTimeout(() => loadingText.innerText = "Extracting semantic payload...", 800);
+        setTimeout(() => loadingText.innerText = "Fusing risk metrics...", 1600);
 
-    scanBtn.addEventListener('click', function() {
-        // Hide previous results, show loading animation
-        resultDiv.style.display = 'none';
-        scanBtn.style.display = 'none';
-        loader.style.display = 'block';
-
-        // Send the URL to our local API!
+        // 3. Auto-Trigger the AI Scan
         fetch('http://127.0.0.1:8080/api/v1/scan', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                url: currentTabUrl,
-                deep_scan: true
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: currentTabUrl, deep_scan: true })
         })
         .then(response => response.json())
         .then(data => {
-            // Hide loading, show results
-            loader.style.display = 'none';
-            scanBtn.style.display = 'block';
-            scanBtn.innerText = "Scan Again";
+            // Hide loader, show results
+            loadingView.style.display = 'none';
             resultDiv.style.display = 'block';
-
-            // Format the result box based on the AI's prediction
+            
+            // Format dynamic UI based on prediction
             if (data.prediction === "Phishing") {
                 resultDiv.innerHTML = `
-                    <strong style="color: #ff4444;">🛑 CRITICAL ALERT: Phishing</strong><br><br>
-                    <strong>Risk Score:</strong> ${data.final_score.toFixed(2)}<br>
-                    <strong>Reason:</strong> ${data.reason}
+                    <div class="result-title" style="color: var(--danger);">🛑 Threat Detected</div>
+                    <div class="metric">Risk Score: <span>${data.final_score.toFixed(2)} / 1.0</span></div>
+                    <div class="reason">${data.reason}</div>
                 `;
-                resultDiv.style.borderLeft = "4px solid #ff4444";
+                resultDiv.style.borderLeft = "4px solid var(--danger)";
             } else if (data.prediction === "Trusted Domain") {
-                 resultDiv.innerHTML = `
-                    <strong style="color: #17B169;">✅ SAFE: Trusted Domain</strong><br><br>
-                    <strong>Category:</strong> ${data.trusted_category}<br>
-                    <strong>Reason:</strong> ${data.reason}
-                `;
-                resultDiv.style.borderLeft = "4px solid #17B169";
-            }
-             else {
                 resultDiv.innerHTML = `
-                    <strong style="color: #17B169;">✅ SAFE: Clean Baseline</strong><br><br>
-                    <strong>Risk Score:</strong> ${data.final_score.toFixed(2)}<br>
-                    <strong>Reason:</strong> ${data.reason}
+                    <div class="result-title" style="color: var(--accent);">💎 Verified Safe</div>
+                    <div class="metric">Category: <span>${data.trusted_category}</span></div>
+                    <div class="reason">${data.reason}</div>
                 `;
-                resultDiv.style.borderLeft = "4px solid #17B169";
+                resultDiv.style.borderLeft = "4px solid var(--accent)";
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="result-title" style="color: var(--safe);">✅ Clean Baseline</div>
+                    <div class="metric">Risk Score: <span>${data.final_score.toFixed(2)} / 1.0</span></div>
+                    <div class="reason">${data.reason}</div>
+                `;
+                resultDiv.style.borderLeft = "4px solid var(--safe)";
             }
+            
+            // Trigger CSS fade-in animation
+            setTimeout(() => resultDiv.classList.add('fade-in'), 10);
         })
         .catch((error) => {
-            // If the API is offline or crashes
-            loader.style.display = 'none';
-            scanBtn.style.display = 'block';
+            loadingView.style.display = 'none';
             resultDiv.style.display = 'block';
-            resultDiv.innerHTML = `<strong style="color: #ffaa00;">⚠️ Connection Error</strong><br>Could not reach the AI Engine. Make sure the API is running on Port 8080.`;
-            console.error('Error:', error);
+            resultDiv.innerHTML = `<div class="result-title" style="color: #f59e0b;">⚠️ Engine Offline</div><div class="reason">Could not connect to the local API on Port 8080.</div>`;
+            resultDiv.classList.add('fade-in');
         });
     });
 });
