@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Agentic Phishing Shield",
+  "version": "1.0",
+  "description": "Real-time AI phishing detection powered by multi-agent analysis.",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8080/*"
+  ]
+}
