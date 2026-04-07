@@ -26,6 +26,9 @@ document.addEventListener('click', function(event) {
 function scanImageForQR(imgElement) {
     if (!isShieldActive || !window.jsQR) return;
 
+    // Cross-origin bypass attempt for external images
+    imgElement.crossOrigin = "Anonymous";
+
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d', { willReadFrequently: true });
     
@@ -47,7 +50,7 @@ function scanImageForQR(imgElement) {
             
             // Send the hidden URL to your Python API!
             chrome.runtime.sendMessage({ action: "checkUrl", url: code.data }, function(response) {
-                handleAiResponse(response, code.data, false); // false = don't auto-redirect if safe
+                handleAiResponse(response, code.data, false); 
             });
         }
     } catch (e) {
@@ -55,7 +58,26 @@ function scanImageForQR(imgElement) {
     }
 }
 
-// Invisible watcher for new images
+// 🛠️ THE FIX: Scan images that are ALREADY on the page when it loads!
+function scanExistingImages() {
+    const images = document.querySelectorAll('img');
+    images.forEach(img => {
+        if (img.complete && img.naturalHeight !== 0) {
+            scanImageForQR(img);
+        } else {
+            img.onload = () => scanImageForQR(img);
+        }
+    });
+}
+
+// Run the initial scan as soon as the page is ready
+if (document.readyState === 'complete') {
+    scanExistingImages();
+} else {
+    window.addEventListener('load', scanExistingImages);
+}
+
+// Keep the watcher for any NEW images that load later
 const observer = new MutationObserver((mutations) => {
     mutations.forEach(mutation => {
         mutation.addedNodes.forEach(node => {
