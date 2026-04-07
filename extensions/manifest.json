@@ -31,5 +31,11 @@
       "resources": ["warning.html", "warning.js"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "agentic-shield@yourdomain.com",
+      "strict_min_version": "109.0"
+    }
+  }
 }
