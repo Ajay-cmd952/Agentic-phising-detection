@@ -1,19 +1,38 @@
 document.addEventListener('DOMContentLoaded', function() {
     const resultDiv = document.getElementById('result');
-    const urlDisplay = document.getElementById('current-url');
     const loadingView = document.getElementById('loading-view');
     const loadingText = document.querySelector('.loading-text');
+    const toggle = document.getElementById('master-toggle');
+    const statusText = document.getElementById('status-text');
 
-    // 1. Instantly grab the URL when popup opens
+    // 1. Load Toggle State
+    chrome.storage.local.get(['shieldActive'], function(result) {
+        if (result.shieldActive === false) {
+            toggle.checked = false;
+            statusText.innerText = "Shield is OFF";
+            statusText.style.color = "#94a3b8";
+        }
+    });
+
+    // 2. Save Toggle State when clicked
+    toggle.addEventListener('change', function() {
+        chrome.storage.local.set({ shieldActive: this.checked });
+        if (this.checked) {
+            statusText.innerText = "Shield is ON";
+            statusText.style.color = "#f8fafc";
+        } else {
+            statusText.innerText = "Shield is OFF";
+            statusText.style.color = "#94a3b8";
+        }
+    });
+
+    // 3. Auto-Trigger the AI Scan for the popup UI
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         let currentTabUrl = tabs[0].url;
-        urlDisplay.innerText = currentTabUrl.length > 45 ? currentTabUrl.substring(0, 45) + '...' : currentTabUrl;
         
-        // 2. Change loading text dynamically to look highly technical
         setTimeout(() => loadingText.innerText = "Extracting semantic payload...", 800);
         setTimeout(() => loadingText.innerText = "Fusing risk metrics...", 1600);
 
-        // 3. Auto-Trigger the AI Scan
         fetch('http://127.0.0.1:8080/api/v1/scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -21,11 +40,9 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            // Hide loader, show results
             loadingView.style.display = 'none';
             resultDiv.style.display = 'block';
             
-            // Format dynamic UI based on prediction
             if (data.prediction === "Phishing") {
                 resultDiv.innerHTML = `
                     <div class="result-title" style="color: var(--danger);">🛑 Threat Detected</div>
@@ -48,8 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 resultDiv.style.borderLeft = "4px solid var(--safe)";
             }
-            
-            // Trigger CSS fade-in animation
             setTimeout(() => resultDiv.classList.add('fade-in'), 10);
         })
         .catch((error) => {
