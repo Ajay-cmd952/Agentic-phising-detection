@@ -12,7 +12,6 @@ document.addEventListener('click', function(event) {
     let target = event.target.closest('a'); 
     if (!target || !target.href || target.href.startsWith('javascript:') || target.href.startsWith('mailto:')) return;
     if (!isShieldActive) return;
-    if (!chrome.runtime || !chrome.runtime.sendMessage) return; 
 
     event.preventDefault();
     showToast("🛡️ Agentic Shield: Scanning payload...");
@@ -26,75 +25,52 @@ document.addEventListener('click', function(event) {
 function scanImageForQR(imgElement) {
     if (!isShieldActive || !window.jsQR) return;
 
-    // Cross-origin bypass attempt for external images
     imgElement.crossOrigin = "Anonymous";
-
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d', { willReadFrequently: true });
     
     if (imgElement.width === 0 || imgElement.height === 0) return;
-
     canvas.width = imgElement.width;
     canvas.height = imgElement.height;
     
     try {
         context.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        
-        // Pass pixels to jsQR
         const code = jsQR(imageData.data, imageData.width, imageData.height);
         
         if (code && code.data.startsWith('http')) {
-            console.log("Agentic Shield found a hidden QR URL:", code.data);
             showToast("🛡️ Agentic Shield: Secret QR Code detected. Scanning...");
-            
-            // Send the hidden URL to your Python API!
             chrome.runtime.sendMessage({ action: "checkUrl", url: code.data }, function(response) {
                 handleAiResponse(response, code.data, false); 
             });
         }
-    } catch (e) {
-        // Ignore cross-origin image blocks
-    }
+    } catch (e) {}
 }
 
-// 🛠️ THE FIX: Scan images that are ALREADY on the page when it loads!
 function scanExistingImages() {
     const images = document.querySelectorAll('img');
     images.forEach(img => {
-        if (img.complete && img.naturalHeight !== 0) {
-            scanImageForQR(img);
-        } else {
-            img.onload = () => scanImageForQR(img);
-        }
+        if (img.complete && img.naturalHeight !== 0) scanImageForQR(img);
+        else img.onload = () => scanImageForQR(img);
     });
 }
 
-// Run the initial scan as soon as the page is ready
-if (document.readyState === 'complete') {
-    scanExistingImages();
-} else {
-    window.addEventListener('load', scanExistingImages);
-}
+if (document.readyState === 'complete') scanExistingImages();
+else window.addEventListener('load', scanExistingImages);
 
-// Keep the watcher for any NEW images that load later
 const observer = new MutationObserver((mutations) => {
     mutations.forEach(mutation => {
         mutation.addedNodes.forEach(node => {
-            if (node.tagName === 'IMG') {
-                node.onload = () => scanImageForQR(node);
-            } else if (node.querySelectorAll) {
-                const imgs = node.querySelectorAll('img');
-                imgs.forEach(img => { img.onload = () => scanImageForQR(img); });
+            if (node.tagName === 'IMG') node.onload = () => scanImageForQR(node);
+            else if (node.querySelectorAll) {
+                node.querySelectorAll('img').forEach(img => { img.onload = () => scanImageForQR(img); });
             }
         });
     });
 });
-
 observer.observe(document.body, { childList: true, subtree: true });
 
-
-// --- 4. HELPER FUNCTIONS ---
+// --- 4. THE ORIGINAL TOAST HELPER ---
 let activeToast = null;
 
 function showToast(message) {
@@ -113,7 +89,6 @@ function handleAiResponse(response, targetUrl, isClick) {
     }
     if (response.status === "Phishing") {
         if (activeToast) activeToast.remove();
-        // Redirect to Red Screen of Death
         window.location.href = chrome.runtime.getURL(`warning.html?url=${encodeURIComponent(targetUrl)}`);
     } else {
         if (activeToast) {
@@ -122,7 +97,42 @@ function handleAiResponse(response, targetUrl, isClick) {
             setTimeout(() => {
                 activeToast.remove(); 
                 if (isClick) window.location.href = targetUrl; 
-            }, 500); 
+            }, 1000); 
         }
     }
 }
+
+// --- 5. THE ORIGINAL SNIPER RECEIVER ---
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.action === "analyzeScreenshot") {
+        showToast("🛡️ Sniper Mode: Scanning screen...");
+        
+        const img = new Image();
+        img.src = request.image;
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = img.width; canvas.height = img.height;
+            context.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            
+            if (code) {
+                if (code.data.startsWith('http')) {
+                    showToast("🛡️ Target acquired. Analyzing...");
+                    chrome.runtime.sendMessage({ action: "checkUrl", url: code.data }, (res) => handleAiResponse(res, code.data, false));
+                } else if (code.data.startsWith('upi://')) {
+                    // This is the UPI specific check you wanted
+                    showToast("💸 UPI Payment QR Detected.");
+                    setTimeout(() => { if(activeToast) activeToast.remove(); }, 3000);
+                } else {
+                    showToast("✅ Safe text found in QR.");
+                    setTimeout(() => { if(activeToast) activeToast.remove(); }, 3000);
+                }
+            } else {
+                showToast("❌ No QR detected on screen.");
+                setTimeout(() => { if(activeToast) activeToast.remove(); }, 2500);
+            }
+        };
+    }
+});
