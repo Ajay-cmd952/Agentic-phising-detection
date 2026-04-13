@@ -4,8 +4,8 @@ console.log("🛡️ Agentic Shield Service Worker: Awake and Monitoring.");
 // 1. Master Message Listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "checkUrl") {
-        // Send to Local Python API
-        fetch('http://127.0.0.1:8080/api/v1/scan', {
+        // Send to Cloud Hugging Face API
+        fetch('https://ajay0006-agentic-shield-api.hf.space/api/v1/scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: request.url, deep_scan: true })
@@ -44,7 +44,7 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     // Handle Right-Click on a Link
     if (info.menuItemId === "scan-link") {
-        fetch('http://127.0.0.1:8080/api/v1/scan', {
+        fetch('https://ajay0006-agentic-shield-api.hf.space/api/v1/scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: info.linkUrl, deep_scan: true })
