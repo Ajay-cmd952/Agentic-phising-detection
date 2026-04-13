@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from utils.orchestrator import AIOrchestrator
 
@@ -8,6 +9,15 @@ app = FastAPI(
     title="Agentic Phishing API Bridge", 
     description="Backend API for real-time Chrome Extension integration.",
     version="1.0"
+)
+
+# --- THE FIX: ENABLE CORS FOR CHROME EXTENSION ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows requests from any Chrome Extension or website
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows POST, GET, etc.
+    allow_headers=["*"],
 )
 
 # --- SILENCE THE FAVICON ERROR ---
