@@ -4,31 +4,68 @@
   <meta charset="UTF-8">
   <title>Access Blocked | Agentic Shield</title>
   <style>
-    body { background-color: #020617; color: #f8fafc; font-family: 'Segoe UI', system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-    .card { background: #0f172a; padding: 40px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 0 1px #1e293b; text-align: center; max-width: 500px; position: relative; overflow: hidden; }
-    .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #ef4444, #f97316); }
-    .icon { font-size: 64px; margin-bottom: 20px; text-shadow: 0 0 30px rgba(239,68,68,0.4); animation: pulse 2s infinite; }
-    h1 { margin: 0 0 15px; color: #f8fafc; font-size: 28px; letter-spacing: 0.5px; }
-    p { color: #94a3b8; line-height: 1.6; margin-bottom: 30px; font-size: 15px; }
-    .btn-group { display: flex; gap: 15px; justify-content: center; }
-    button { padding: 12px 24px; font-size: 15px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-    .btn-safe { background-color: #ef4444; color: white; }
-    .btn-safe:hover { background-color: #dc2626; box-shadow: 0 0 20px rgba(239,68,68,0.3); transform: translateY(-1px); }
-    .btn-danger { background-color: transparent; color: #64748b; border: 1px solid #334155; }
-    .btn-danger:hover { color: #cbd5e1; border-color: #64748b; background: rgba(255,255,255,0.05); }
+    :root { 
+        --bg: #050505; 
+        --card: #0c0c0e; 
+        --gold: #D4AF37; 
+        --text: #f8fafc; 
+        --muted: #71717a; 
+    }
+    body { background-color: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
     
-    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    .card { 
+        background: var(--card); 
+        padding: 50px; 
+        border-radius: 24px; 
+        border: 1px solid var(--gold); 
+        box-shadow: 0 0 50px rgba(212, 175, 55, 0.1); 
+        text-align: center; 
+        max-width: 550px; 
+        position: relative; 
+    }
+    
+    .icon { 
+        font-size: 72px; 
+        margin-bottom: 25px; 
+        filter: drop-shadow(0 0 15px var(--gold));
+        animation: pulse 2.5s infinite; 
+    }
+    
+    h1 { margin: 0 0 15px; color: var(--gold); font-size: 32px; letter-spacing: 2px; text-transform: uppercase; }
+    p { color: var(--muted); line-height: 1.8; margin-bottom: 35px; font-size: 16px; }
+    
+    .btn-group { display: flex; gap: 20px; justify-content: center; }
+    
+    button { 
+        padding: 14px 32px; 
+        font-size: 15px; 
+        font-weight: 700; 
+        border: none; 
+        border-radius: 10px; 
+        cursor: pointer; 
+        transition: all 0.3s; 
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .btn-safe { background-color: var(--gold); color: black; }
+    .btn-safe:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(212, 175, 55, 0.4); }
+    
+    .btn-danger { background-color: transparent; color: var(--muted); border: 1px solid #27272a; }
+    .btn-danger:hover { color: var(--text); border-color: var(--muted); }
+    
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="icon">🛡️</div>
-    <h1>Connection Intercepted</h1>
-    <p>Agentic Shield has blocked this navigation. The website you are attempting to visit has been identified as a highly probable phishing or malware distribution vector.</p>
+    <h1>Connection Neutralized</h1>
+    <p>The Agentic engine has intercepted this navigation request. The destination pattern indicates a high-probability threat vector associated with phishing or malware distribution.</p>
     
     <div class="btn-group">
       <button class="btn-safe" id="go-back">Return to Safety</button>
-      <button class="btn-danger" id="proceed">Ignore Risk (Unsafe)</button>
+      <button class="btn-danger" id="proceed">Ignore Risk</button>
     </div>
   </div>
   <script src="warning.js"></script>
