@@ -1,5 +1,5 @@
-// 🛡️ Agentic Shield: Silent Operational Core
-console.log("🛡️ Agentic Shield: Monitoring Silently.");
+// 🛡️ Agentic Shield: Professional Advice Engine
+console.log("🛡️ Agentic Shield: Brain Active.");
 
 function wakeUpServer() {
     fetch('https://ajay0006-agentic-shield-api.hf.space/').catch(() => {});
@@ -8,8 +8,25 @@ chrome.runtime.onStartup.addListener(wakeUpServer);
 chrome.runtime.onInstalled.addListener(wakeUpServer);
 
 async function performScan(url, tabId, sendResponse) {
-    // Advanced Protocols (Mail, Tel, UPI)
-    if (url.startsWith('mailto:') || url.startsWith('tel:') || url.startsWith('upi://')) {
+    let advice = "";
+    let type = "Link";
+
+    if (url.startsWith('upi://') || (url.includes('pa=') && url.includes('@'))) {
+        type = "Payment";
+        advice = "💸 PAYMENT ALERT: This is a request to send money. Verify the recipient name in your GPay/PhonePe app before entering your PIN.";
+    } else if (url.startsWith('WIFI:S:')) {
+        type = "WiFi";
+        advice = "📶 WIFI ALERT: This connects you to a new network. Unknown networks can be used to intercept your personal data.";
+    } else if (url.startsWith('mailto:')) {
+        type = "Email";
+        advice = "📩 EMAIL ALERT: This starts an outgoing draft. Be cautious of hidden trackers used to verify your active status.";
+    } else if (url.startsWith('tel:')) {
+        type = "Phone";
+        advice = "📞 PHONE ALERT: This will dial a number. Verify the source to prevent Vishing (Voice Phishing) or scam calls.";
+    }
+
+    if (type !== "Link") {
+        chrome.tabs.sendMessage(tabId, { action: "showSimpleAdvice", message: advice, isSafe: true });
         if (sendResponse) sendResponse({ status: "Safe" });
         return;
     }
@@ -22,12 +39,21 @@ async function performScan(url, tabId, sendResponse) {
     .then(res => res.json())
     .then(data => {
         if (data.prediction === "Phishing") {
+            chrome.tabs.sendMessage(tabId, { action: "clearToast" });
             chrome.tabs.create({ url: chrome.runtime.getURL(`warning.html?url=${encodeURIComponent(url)}`) });
+        } else {
+            chrome.tabs.sendMessage(tabId, { 
+                action: "showSimpleAdvice", 
+                message: "✅ Verified Safe. Redirecting you now...", 
+                isSafe: true,
+                shouldRedirect: true,
+                targetUrl: url
+            });
         }
-        // SILENT: We just send the result back to content.js without alerts
         if (sendResponse) sendResponse({ status: data.prediction });
     })
     .catch(err => {
+        chrome.tabs.sendMessage(tabId, { action: "showSimpleAdvice", message: "✅ Safe to proceed.", isSafe: true, shouldRedirect: true, targetUrl: url });
         if (sendResponse) sendResponse({ status: "Safe" });
     });
 }
@@ -44,8 +70,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 chrome.runtime.onInstalled.addListener(() => {
-    chrome.contextMenus.create({ id: "scan-link", title: "🛡️ Deep Scan Link", contexts: ["link"] });
-    chrome.contextMenus.create({ id: "scan-qr-sniper", title: "🛡️ Sniper Scan", contexts: ["all"] });
+    chrome.contextMenus.create({ id: "scan-link", title: "🛡️ Scan with Agentic Shield", contexts: ["link"] });
+    chrome.contextMenus.create({ id: "scan-qr-sniper", title: "🛡️ Sniper Scan QR Code", contexts: ["all"] });
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
