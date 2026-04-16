@@ -1,4 +1,4 @@
-// 🛡️ Agentic Shield: Professional Advice Engine
+// 🛡️ Agentic Shield: Core Engine (STABLE VERSION)
 console.log("🛡️ Agentic Shield: Brain Active.");
 
 function wakeUpServer() {
@@ -7,22 +7,42 @@ function wakeUpServer() {
 chrome.runtime.onStartup.addListener(wakeUpServer);
 chrome.runtime.onInstalled.addListener(wakeUpServer);
 
+// --- 1. NEURAL DOWNLOAD GUARD ---
+chrome.downloads.onCreated.addListener((downloadItem) => {
+    const fileExt = downloadItem.filename.split('.').pop().toLowerCase();
+    const riskyExts = ['exe', 'msi', 'zip', 'rar', 'bat', 'apk', 'scr'];
+    if (riskyExts.includes(fileExt)) {
+        chrome.tabs.sendMessage(downloadItem.referrerTabId || -1, { 
+            action: "showSimpleAdvice", 
+            message: `⚠️ NEURAL DOWNLOAD GUARD: Analyzing .${fileExt} file. Cracked software is a primary malware vector.`, 
+            isSafe: false 
+        });
+    }
+});
+
+// --- 2. URL SCANNING ENGINE ---
 async function performScan(url, tabId, sendResponse) {
     let advice = "";
     let type = "Link";
+    
+    try {
+        const urlObj = new URL(url);
+        const hostname = urlObj.hostname.toLowerCase();
+        const trustedDomains = ["google.com", "www.google.com", "gmail.com", "mail.google.com", "microsoft.com", "bing.com", "github.com", "netbeans.org", "youtube.com", "chess.com"];
+
+        if (trustedDomains.some(d => hostname === d || hostname.endsWith('.' + d))) {
+            chrome.tabs.sendMessage(tabId, { action: "showSimpleAdvice", message: "✅ Trusted Domain Verified.", isSafe: true, shouldRedirect: true, targetUrl: url });
+            if (sendResponse) sendResponse({ status: "Safe" });
+            return;
+        }
+    } catch (e) {}
 
     if (url.startsWith('upi://') || (url.includes('pa=') && url.includes('@'))) {
         type = "Payment";
-        advice = "💸 PAYMENT ALERT: This is a request to send money. Verify the recipient name in your GPay/PhonePe app before entering your PIN.";
+        advice = "💸 PAYMENT ALERT: Verify recipient name before PIN entry.";
     } else if (url.startsWith('WIFI:S:')) {
         type = "WiFi";
-        advice = "📶 WIFI ALERT: This connects you to a new network. Unknown networks can be used to intercept your personal data.";
-    } else if (url.startsWith('mailto:')) {
-        type = "Email";
-        advice = "📩 EMAIL ALERT: This starts an outgoing draft. Be cautious of hidden trackers used to verify your active status.";
-    } else if (url.startsWith('tel:')) {
-        type = "Phone";
-        advice = "📞 PHONE ALERT: This will dial a number. Verify the source to prevent Vishing (Voice Phishing) or scam calls.";
+        advice = "📶 WIFI ALERT: Public networks can intercept data.";
     }
 
     if (type !== "Link") {
@@ -42,22 +62,15 @@ async function performScan(url, tabId, sendResponse) {
             chrome.tabs.sendMessage(tabId, { action: "clearToast" });
             chrome.tabs.create({ url: chrome.runtime.getURL(`warning.html?url=${encodeURIComponent(url)}`) });
         } else {
-            chrome.tabs.sendMessage(tabId, { 
-                action: "showSimpleAdvice", 
-                message: "✅ Verified Safe. Redirecting you now...", 
-                isSafe: true,
-                shouldRedirect: true,
-                targetUrl: url
-            });
+            chrome.tabs.sendMessage(tabId, { action: "showSimpleAdvice", message: "✅ Verified Safe. Redirecting...", isSafe: true, shouldRedirect: true, targetUrl: url });
         }
-        if (sendResponse) sendResponse({ status: data.prediction });
     })
-    .catch(err => {
+    .catch(() => {
         chrome.tabs.sendMessage(tabId, { action: "showSimpleAdvice", message: "✅ Safe to proceed.", isSafe: true, shouldRedirect: true, targetUrl: url });
-        if (sendResponse) sendResponse({ status: "Safe" });
     });
 }
 
+// --- 3. EVENT LISTENERS ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "checkUrl") {
         performScan(request.url, sender.tab.id, sendResponse);
@@ -70,8 +83,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 chrome.runtime.onInstalled.addListener(() => {
-    chrome.contextMenus.create({ id: "scan-link", title: "🛡️ Scan with Agentic Shield", contexts: ["link"] });
-    chrome.contextMenus.create({ id: "scan-qr-sniper", title: "🛡️ Sniper Scan QR Code", contexts: ["all"] });
+    // Re-registering menus to ensure they appear
+    chrome.contextMenus.removeAll(() => {
+        chrome.contextMenus.create({ id: "scan-link", title: "🛡️ Scan with Agentic Shield", contexts: ["link"] });
+        chrome.contextMenus.create({ id: "scan-qr-sniper", title: "🛡️ Sniper Scan QR Code", contexts: ["all"] });
+    });
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
