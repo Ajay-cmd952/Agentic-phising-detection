@@ -29,30 +29,61 @@ init_db()
 
 st.set_page_config(page_title="Agentic Phishing Detector", page_icon="🛡️", layout="wide", initial_sidebar_state="expanded")
 
-# --- SESSION STATE FOR DYNAMIC SETTINGS ---
-if 'is_admin' not in st.session_state:
-    st.session_state.is_admin = False
-if 'url_threshold' not in st.session_state:
-    st.session_state.url_threshold = 0.80
-if 'fusion_threshold' not in st.session_state:
-    st.session_state.fusion_threshold = 0.60
-if 'deep_scan' not in st.session_state:
-    st.session_state.deep_scan = True
-if 'theme' not in st.session_state:
-    st.session_state.theme = "Crimson Threat (Dark)"
+# --- INDESTRUCTIBLE SESSION STATE ---
+if 'is_admin' not in st.session_state: st.session_state.is_admin = False
+if 'url_threshold' not in st.session_state: st.session_state.url_threshold = 0.80
+if 'fusion_threshold' not in st.session_state: st.session_state.fusion_threshold = 0.60
+if 'deep_scan' not in st.session_state: st.session_state.deep_scan = True
+if 'theme' not in st.session_state: st.session_state.theme = "Crimson Threat (Dark)"
+
+if 'active_target' not in st.session_state: st.session_state.active_target = None
+if 'last_target' not in st.session_state: st.session_state.last_target = ""
 
 @st.cache_resource
 def load_ai():
     return AIOrchestrator()
 orchestrator = load_ai()
 
-# --- THE GHOST PORTAL LOGIC ---
-query_params = st.query_params
-show_portal = query_params.get("auth") == "portal"
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_cached_scan(url, deep_scan, url_thresh, fusion_thresh):
+    return orchestrator.run_detection(
+        url, 
+        deep_scan=deep_scan,
+        url_threshold=url_thresh,
+        fusion_threshold=fusion_thresh
+    )
+
+# --- THE UNIVERSAL URL EXTRACTOR ---
+analyze_target = ""
+show_portal = False
+
+try:
+    raw_params = st.query_params.to_dict()
+except:
+    try:
+        raw_params = st.experimental_get_query_params()
+    except:
+        raw_params = {}
+
+if "analyze_target" in raw_params:
+    val = raw_params["analyze_target"]
+    analyze_target = val[0] if isinstance(val, list) else val
+    
+if "auth" in raw_params:
+    val = raw_params["auth"]
+    show_portal = (val[0] if isinstance(val, list) else val) == "portal"
+
+if analyze_target:
+    analyze_target = urllib.parse.unquote(analyze_target)
+
+if analyze_target and st.session_state.last_target != analyze_target:
+    st.session_state.last_target = analyze_target
+    st.session_state.active_target = analyze_target
 
 with st.sidebar:
-    st.title("🛡️ Admin Console")
-    st.markdown("**Agentic Threat Pipeline**")
+    # --- UNIFIED TITLE ---
+    st.title("🛡️ Agentic Shield")
+    st.markdown("**Threat Intelligence Pipeline**")
     st.markdown("---")
     
     if st.session_state.is_admin:
@@ -62,7 +93,6 @@ with st.sidebar:
 
     st.markdown("---")
     
-    # --- UI THEME TOGGLE ---
     st.session_state.theme = st.radio("🎨 UI Theme", ["Crimson Threat (Dark)", "Enterprise Clean (Light)"])
     st.markdown("---")
     
@@ -76,6 +106,7 @@ with st.sidebar:
     
     st.markdown("---")
     
+    # Hidden Portal Logic Remains Active
     if not st.session_state.is_admin:
         if show_portal:
             st.markdown("🔒 **Hidden Admin Portal**")
@@ -94,7 +125,7 @@ with st.sidebar:
             st.rerun()
         st.caption("Current User: Administrator")
         
-    st.caption("System Version: 7.0 (Ghost Portal Enabled)")
+    st.caption("System Version: 8.2 (Stable UX)")
 
 # --- CONDITIONAL CSS STYLING ---
 if st.session_state.theme == "Crimson Threat (Dark)":
@@ -119,7 +150,6 @@ if app_mode == "🔍 Threat Scanner":
     st.title("Deep Scan Engine")
     st.markdown("Choose your input method below to scan for phishing threats.")
     col_input, col_info = st.columns([2, 1])
-    target_url = None
 
     with col_info:
         st.info("**Supported Formats:**\n- Raw URLs (http/https)\n- Raw Email Text\n- SMS Message Text\n- QR Code Screenshots")
@@ -127,27 +157,12 @@ if app_mode == "🔍 Threat Scanner":
 
     with col_input:
         input_tab1, input_tab2 = st.tabs(["📝 Text / URL Input", "📷 QR Code Scanner (Quishing)"])
+        
         with input_tab1:
-            user_input = st.text_area("Target Data Input:", height=150, placeholder="Paste raw text, SMS messages, emails, or direct URLs here...")
+            user_input = st.text_area("Target Data Input:", value=analyze_target, height=150, placeholder="Paste raw text, SMS messages, emails, or direct URLs here...")
+            
             if st.button("🚀 Initialize Multi-Agent Scan", type="primary", use_container_width=True):
-                raw_input = user_input.strip()
-                if not raw_input:
-                    st.error("⚠️ Please input data to scan.")
-                else:
-                    # --- THE ULTIMATE DRAGNET REGEX ---
-                    # 1. Catches standard protocols (http, https, upi, tel, wifi, mailto, etc.)
-                    # 2. Catches any bare string that looks like a domain (e.g., hiphopcanada.com, login.secure.net)
-                    extraction_pattern = r'((?:https?://|upi://|tel:|wifi:|smsto:|mailto:|matmsg:)[^\s]+|(?:(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})(?:/[^\s]*)?)'
-                    extracted_urls = re.findall(extraction_pattern, raw_input, re.IGNORECASE)
-                    
-                    if extracted_urls:
-                        # Grab the first match we find
-                        target_url = extracted_urls[0]
-                    # Smart Fallback just in case the regex misses a highly obfuscated single string
-                    elif " " not in raw_input and ("." in raw_input or ":" in raw_input):
-                        target_url = raw_input
-                    else:
-                        st.success("✅ No clickable URLs or system commands detected in the payload.")
+                st.session_state.active_target = user_input.strip()
 
         with input_tab2:
             st.info("Upload a screenshot of a suspicious QR code. The Vision Agent will extract the hidden link.")
@@ -161,89 +176,103 @@ if app_mode == "🔍 Threat Scanner":
                             img_array = np.array(image.convert('RGB'))
                             decoded_objects = decode(img_array)
                             if decoded_objects:
-                                target_url = decoded_objects[0].data.decode('utf-8')
                                 st.success("✅ Vision Agent successfully extracted URL from image.")
+                                st.session_state.active_target = decoded_objects[0].data.decode('utf-8')
                             else:
                                 st.error("❌ Could not detect a valid QR code in this image.")
                         except Exception as e:
                             st.error(f"⚠️ Image Processing Error: {e}")
 
-    if target_url:
-        st.markdown("---")
-        st.markdown(f"**🔗 Target Locked:** `{target_url}`")
+    # --- THE EXECUTION ENGINE ---
+    if st.session_state.active_target:
+        raw_input = st.session_state.active_target
+        target_url = None
         
-        with st.spinner("🤖 Multi-Agent Pipeline is analyzing the threat..."):
-            time.sleep(1.0) 
-            try:
-                result = orchestrator.run_detection(
-                    target_url, 
-                    deep_scan=st.session_state.deep_scan,
-                    url_threshold=st.session_state.url_threshold,
-                    fusion_threshold=st.session_state.fusion_threshold
-                )
-                
-                status = result.get('prediction', 'Unknown')
-                final_score = result.get('final_score', 0.5)
-                url_risk = result.get('url_risk', 0.5)
-                content_risk = result.get('content_risk', 0.0 if not st.session_state.deep_scan else 0.5)
-                real_url = result.get('real_url', 'Unknown Destination')
-                xai_reason = result.get('reason', 'AI analysis complete.')
-                
-                log_to_db(target_url, status, final_score)
-                st.subheader("🚨 Threat Intelligence Report")
-                
-                if status == "Phishing":
-                    st.error(f"**CRITICAL ALERT: Payload classified as {status.upper()}** 🛑")
-                elif status == "Trusted Domain":
-                    category = result.get('trusted_category', 'Verified Platform')
-                    st.success(f"**CLEAN: {category.upper()}** ✅\n\n*System Notice: This domain has been securely verified against the internal enterprise allowlist.*")
-                elif status == "Financial Warning":
-                    parsed = urllib.parse.urlparse(target_url)
-                    params = urllib.parse.parse_qs(parsed.query)
-                    payee_name = params.get('pn', ['Unknown Payee'])[0]
-                    payee_vpa = params.get('pa', ['Unknown ID'])[0]
-                    st.warning(f"**FINANCIAL INTERCEPTION:** Direct payment link detected. 💸\n\n**Requested Payee:** `{payee_name}`\n**UPI ID:** `{payee_vpa}`\n\n*Security Protocol: Verify the Payee Name and UPI ID.*")
-                elif status == "System Command":
-                    st.info("**SYSTEM ACTION: This code connects to a Wi-Fi network or triggers a device action. Verify the network name before connecting!** 📡")
-                elif status == "Shortener Warning":
-                    st.warning(f"**OBFUSCATION DETECTED: This is a masked URL shortener.** 🕵️\n\n**Hidden Destination Revealed:** `{real_url}`")
-                else:
-                    st.success(f"**CLEAN: Payload classified as {status.upper()}** ✅")
-                
-                st.markdown("""
-                <div style="background-color: rgba(30, 40, 50, 0.6); padding: 15px; border-radius: 8px; border-left: 5px solid #00aaff; margin-top: 15px;">
-                    <h4 style="margin-top: 0px; color: #00aaff;">🤖 Explainable AI (XAI) Verdict</h4>
-                    <p style="font-size: 16px; margin-bottom: 0px;">{}</p>
-                </div>
-                """.format(xai_reason), unsafe_allow_html=True)
-                
-                st.markdown("---")
+        extraction_pattern = r'((?:https?://|upi://|tel:|wifi:|smsto:|mailto:|matmsg:)[^\s]+|(?:(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})(?:/[^\s]*)?)'
+        extracted_urls = re.findall(extraction_pattern, raw_input, re.IGNORECASE)
+        
+        if extracted_urls:
+            target_url = extracted_urls[0]
+        elif " " not in raw_input and ("." in raw_input or ":" in raw_input):
+            target_url = raw_input
+            
+        if not target_url:
+            st.error("⚠️ No clickable URLs or system commands detected in the input payload.")
+        else:
+            st.markdown("---")
+            st.markdown(f"**🔗 Target Locked:** `{target_url}`")
+            
+            with st.spinner("🤖 Multi-Agent Pipeline is analyzing the threat..."):
+                try:
+                    result = get_cached_scan(
+                        target_url, 
+                        st.session_state.deep_scan,
+                        st.session_state.url_threshold,
+                        st.session_state.fusion_threshold
+                    )
                     
-                res_tab1, res_tab2 = st.tabs(["📊 Metric Overview", "🧠 AI Decision Log"])
-                with res_tab1:
-                    st.progress(float(final_score), text=f"Final Threat Level: {final_score:.2f}")
-                    m1, m2, m3 = st.columns(3)
-                    m1.metric("Fusion Risk Score", f"{final_score:.2f}")
-                    m2.metric("Structural Risk (URL)", f"{url_risk:.2f}")
-                    if st.session_state.deep_scan:
-                        m3.metric("Semantic Risk (Content)", f"{content_risk:.2f}")
+                    status = result.get('prediction', 'Unknown')
+                    final_score = result.get('final_score', 0.5)
+                    url_risk = result.get('url_risk', 0.5)
+                    content_risk = result.get('content_risk', 0.0 if not st.session_state.deep_scan else 0.5)
+                    real_url = result.get('real_url', 'Unknown Destination')
+                    xai_reason = result.get('reason', 'AI analysis complete.')
+                    
+                    log_to_db(target_url, status, final_score)
+                    st.subheader("🚨 Threat Intelligence Report")
+                    
+                    if status == "Phishing":
+                        st.error(f"**CRITICAL ALERT: Payload classified as {status.upper()}** 🛑")
+                    elif status == "Trusted Domain":
+                        category = result.get('trusted_category', 'Verified Platform')
+                        st.success(f"**CLEAN: {category.upper()}** ✅\n\n*System Notice: This domain has been securely verified against the internal enterprise allowlist.*")
+                    elif status == "Financial Warning":
+                        parsed = urllib.parse.urlparse(target_url)
+                        params = urllib.parse.parse_qs(parsed.query)
+                        payee_name = params.get('pn', ['Unknown Payee'])[0]
+                        payee_vpa = params.get('pa', ['Unknown ID'])[0]
+                        st.warning(f"**FINANCIAL INTERCEPTION:** Direct payment link detected. 💸\n\n**Requested Payee:** `{payee_name}`\n**UPI ID:** `{payee_vpa}`\n\n*Security Protocol: Verify the Payee Name and UPI ID.*")
+                    elif status == "System Command":
+                        st.info("**SYSTEM ACTION: This code connects to a Wi-Fi network or triggers a device action. Verify the network name before connecting!** 📡")
+                    elif status == "Shortener Warning":
+                        st.warning(f"**OBFUSCATION DETECTED: This is a masked URL shortener.** 🕵️\n\n**Hidden Destination Revealed:** `{real_url}`")
                     else:
-                        m3.metric("Semantic Risk (Content)", "Bypassed")
-                
-                with res_tab2:
-                    st.write("### Pipeline Execution Trace")
-                    st.write("1. **Input Processor:** Target URL isolated successfully.")
-                    st.write("2. **URL Agent:** Extracted structural anomalies.")
-                    if st.session_state.deep_scan:
-                        st.write("3. **Content Agent:** Assessed semantic payload using NLP.")
-                    else:
-                        st.write("3. **Content Agent:** Bypassed per Admin policy.")
-                    st.write("4. **Fusion Module:** Applied dynamic risk thresholds.")
-                    st.write("5. **Explainable AI Module:** Generated reasoning rationale.")
-                    st.write("6. **Database Module:** Scan saved to `scans.db` 💾")
-            except Exception as e:
-                st.error("❌ **Backend Engine Error**")
-                st.code(str(e))
+                        st.success(f"**CLEAN: Payload classified as {status.upper()}** ✅")
+                    
+                    st.markdown("""
+                    <div style="background-color: rgba(30, 40, 50, 0.6); padding: 15px; border-radius: 8px; border-left: 5px solid #00aaff; margin-top: 15px;">
+                        <h4 style="margin-top: 0px; color: #00aaff;">🤖 Explainable AI (XAI) Verdict</h4>
+                        <p style="font-size: 16px; margin-bottom: 0px;">{}</p>
+                    </div>
+                    """.format(xai_reason), unsafe_allow_html=True)
+                    
+                    st.markdown("---")
+                        
+                    res_tab1, res_tab2 = st.tabs(["📊 Metric Overview", "🧠 AI Decision Log"])
+                    with res_tab1:
+                        st.progress(float(final_score), text=f"Final Threat Level: {final_score:.2f}")
+                        m1, m2, m3 = st.columns(3)
+                        m1.metric("Fusion Risk Score", f"{final_score:.2f}")
+                        m2.metric("Structural Risk (URL)", f"{url_risk:.2f}")
+                        if st.session_state.deep_scan:
+                            m3.metric("Semantic Risk (Content)", f"{content_risk:.2f}")
+                        else:
+                            m3.metric("Semantic Risk (Content)", "Bypassed")
+                    
+                    with res_tab2:
+                        st.write("### Pipeline Execution Trace")
+                        st.write("1. **Input Processor:** Target URL isolated successfully.")
+                        st.write("2. **URL Agent:** Extracted structural anomalies.")
+                        if st.session_state.deep_scan:
+                            st.write("3. **Content Agent:** Assessed semantic payload using NLP.")
+                        else:
+                            st.write("3. **Content Agent:** Bypassed per Admin policy.")
+                        st.write("4. **Fusion Module:** Applied dynamic risk thresholds.")
+                        st.write("5. **Explainable AI Module:** Generated reasoning rationale.")
+                        st.write("6. **Database Module:** Scan saved to `scans.db` 💾")
+                except Exception as e:
+                    st.error("❌ **Backend Engine Error**")
+                    st.code(str(e))
 
 elif app_mode == "📊 Global Analytics":
     st.title("📊 Global Analytics Dashboard")
