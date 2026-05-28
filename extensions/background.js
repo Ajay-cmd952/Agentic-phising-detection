@@ -98,13 +98,14 @@ async function performScan(url, tabId, sendResponse) {
 
         const hostname = urlObj.hostname.toLowerCase();
         
+        // UPDATED: Added hdfcbank.bank.in and sbi.co.in to this list!
         const trusted = [
             "google.com", "gmail.com", "youtube.com", "microsoft.com", "bing.com", 
             "github.com", "apple.com", "amazon.com", "amazon.in", "flipkart.com", 
             "facebook.com", "instagram.com", "twitter.com", "x.com", "linkedin.com", 
             "wikipedia.org", "yahoo.com", "reddit.com", "whatsapp.com", "netflix.com",
-            "zoom.us", "openai.com", "chess.com", "hdfcbank.com", "onlinesbi.sbi", 
-            "icicibank.com", "naukri.com", "myntra.com"
+            "zoom.us", "openai.com", "chess.com", "hdfcbank.com", "hdfcbank.bank.in", 
+            "onlinesbi.sbi", "sbi.co.in", "icicibank.com", "naukri.com", "myntra.com"
         ];
 
         if (trusted.some(d => hostname === d || hostname.endsWith('.' + d))) {
